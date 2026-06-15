@@ -2493,53 +2493,63 @@
             });
             
             drawFloatingTexts(ctx);
-            
-            // ─── CAJA DE DIÁLOGO — fondo opaco limpio ─────────────────────────
+            // NOTE: Dialogue and oscilloscope are rendered in drawHUD() on the main canvas
+        },
+
+        // drawHUD — called from engine.render() AFTER compositing, on the real main canvas ctx
+        // This guarantees pixel-perfect rendering on top of EVERYTHING (static walls, dynamic entities)
+        drawHUD(mainCtx) {
+            if (!mainCtx) return;
+
+            // ─── CAJA DE DIÁLOGO ─────────────────────────────────────────────────
             if (currentDialogue) {
-                ctx.save();
-                // Fondo sólido para limpiar cualquier carácter del laberinto detrás
-                ctx.fillStyle = '#030508';
-                ctx.fillRect(70, 472, 660, 110);
+                mainCtx.save();
+                mainCtx.textBaseline = 'alphabetic';
 
-                // Borde del panel
-                ctx.strokeStyle = '#00ff66';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(70, 472, 660, 110);
+                // Panel background (solid, covers static walls completely)
+                mainCtx.fillStyle = '#030508';
+                mainCtx.fillRect(50, 452, 700, 116);
 
-                // Línea de acento superior
-                ctx.strokeStyle = 'rgba(0, 255, 102, 0.3)';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(70, 494); ctx.lineTo(730, 494);
-                ctx.stroke();
+                // Border
+                mainCtx.strokeStyle = '#00ff66';
+                mainCtx.lineWidth = 2;
+                mainCtx.strokeRect(50, 452, 700, 116);
 
-                // Speaker name (tipo terminal prompt)
-                ctx.fillStyle = '#00f2fe';
-                ctx.font = "bold 12px 'Courier Prime', monospace";
-                ctx.textAlign = 'left';
-                ctx.fillText('> ' + currentDialogue.speaker + ':', 88, 487);
+                // Top accent line
+                mainCtx.strokeStyle = 'rgba(0, 255, 102, 0.25)';
+                mainCtx.lineWidth = 1;
+                mainCtx.beginPath();
+                mainCtx.moveTo(50, 476); mainCtx.lineTo(750, 476);
+                mainCtx.stroke();
 
-                // Texto del diálogo con word wrap
-                ctx.fillStyle = '#e2e8f0';
-                ctx.font = "12px 'Courier Prime', monospace";
-                const line = currentDialogue.lines[currentDialogue.lineIndex];
-                const wrappedLines = wrapText(line, 60);
-                wrappedLines.forEach((subLine, idx) => {
-                    ctx.fillText(subLine, 88, 510 + idx * 17);
+                // Speaker tag — left aligned
+                mainCtx.fillStyle = '#00f2fe';
+                mainCtx.font = "bold 11px 'Courier Prime', monospace";
+                mainCtx.textAlign = 'left';
+                mainCtx.fillText('> ' + currentDialogue.speaker + ':', 66, 469);
+
+                // Dialogue text — word wrapped at 72 chars (fits in ~700px)
+                mainCtx.fillStyle = '#e2e8f0';
+                mainCtx.font = "12px 'Courier Prime', monospace";
+                const raw = currentDialogue.lines[currentDialogue.lineIndex] || '';
+                const wrapped = wrapText(raw, 72);
+                wrapped.slice(0, 3).forEach((subLine, idx) => {
+                    mainCtx.fillText(subLine, 66, 493 + idx * 17);
                 });
 
-                // Indicador de progreso y tecla
-                const pageIndicator = `[${currentDialogue.lineIndex + 1}/${currentDialogue.lines.length}]`;
-                ctx.fillStyle = '#8ca0b8';
-                ctx.font = "9px 'Courier Prime', monospace";
-                ctx.textAlign = 'right';
-                ctx.fillText(pageIndicator + ' — Presiona [E] para continuar...', 720, 574);
-                ctx.restore();
+                // Progress indicator + key hint — right aligned, inside panel
+                const pi = `[${currentDialogue.lineIndex + 1}/${currentDialogue.lines.length}]`;
+                mainCtx.fillStyle = 'rgba(140, 160, 184, 0.8)';
+                mainCtx.font = "bold 9px 'Courier Prime', monospace";
+                mainCtx.textAlign = 'right';
+                mainCtx.fillText(pi + '  [E] continuar ►', 742, 560);
+
+                mainCtx.restore();
             }
-            
-            // Oscilloscope alignment minigame overlay
+
+            // ─── OSCILÓSCOPO (minijuego de alineación) ──────────────────────────
             if (oscilloscopeActive) {
-                drawOscilloscope(ctx);
+                drawOscilloscope(mainCtx);
             }
         },
 

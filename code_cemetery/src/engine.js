@@ -605,7 +605,13 @@ window.GameEngine = {
             this.flashOpacity -= 0.05; // Fade out
         }
 
-        // 7. Overlay scanlines and ambient screen hum on the main canvas
+        // 7. HUD overlays (dialogue, minigames) — drawn AFTER compositing on main canvas
+        //    This guarantees they appear on top of everything, using real pixel coordinates.
+        if (window.Enemies && typeof window.Enemies.drawHUD === 'function') {
+            window.Enemies.drawHUD(this.ctx);
+        }
+
+        // 8. Overlay scanlines and ambient screen hum on the main canvas
         this.renderScanlinesAndHum();
     },
 

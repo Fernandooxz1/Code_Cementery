@@ -33,10 +33,9 @@
             background-image: radial-gradient(ellipse at center, #0a1020 0%, #01030a 100%);
         }
 
-        /* ===== CRT CONTAINER — ESCALA RESPONSIVA ===== */
+        /* ===== CRT CONTAINER ===== */
         .crt-container {
             position: relative;
-            /* Responsive: usa todo el espacio disponible manteniendo ratio 4:3 */
             width:  min(98vw, 130.6vh);
             height: min(73.5vw, 98vh);
             border-radius: 8px;
@@ -48,7 +47,6 @@
                 inset 0 0 60px rgba(0,0,0,0.5);
         }
 
-        /* Scanline overlay */
         .crt-container::after {
             content: "";
             display: block;
@@ -62,7 +60,6 @@
             z-index: 10;
         }
 
-        /* Vignette */
         .vignette {
             position: absolute;
             inset: 0;
@@ -78,7 +75,7 @@
             background: var(--bg);
         }
 
-        /* ===== OVERLAY PANELS ===== */
+        /* ===== OVERLAYS ===== */
         .overlay {
             position: absolute;
             inset: 0;
@@ -88,20 +85,18 @@
             align-items: center;
             justify-content: center;
             z-index: 20;
-            padding: 0;
             overflow: hidden;
             font-family: var(--mono);
         }
 
         .hidden { display: none !important; }
 
-        /* Terminal window chrome */
+        /* ===== TERMINAL CHROME ===== */
         .term-chrome {
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
-            padding: 0;
         }
 
         .term-titlebar {
@@ -116,11 +111,7 @@
             flex-shrink: 0;
         }
 
-        .term-titlebar .dot {
-            width: 10px; height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-        }
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
         .dot-r { background: #ff5f56; }
         .dot-y { background: #ffbd2e; }
         .dot-g { background: #27c93f; }
@@ -137,15 +128,12 @@
             padding: 18px 24px 12px;
             display: flex;
             flex-direction: column;
-            gap: 0;
         }
 
-        /* Scrollbar estilo terminal */
         .term-body::-webkit-scrollbar { width: 4px; }
         .term-body::-webkit-scrollbar-track { background: transparent; }
         .term-body::-webkit-scrollbar-thumb { background: rgba(0,255,102,0.3); border-radius: 2px; }
 
-        /* Líneas de texto del terminal */
         .tl { font-size: 0.82rem; line-height: 1.55; color: rgba(0,255,102,0.55); white-space: pre; }
         .tl.g  { color: var(--green); }
         .tl.c  { color: var(--cyan); }
@@ -153,18 +141,13 @@
         .tl.w  { color: #e2e8f0; }
         .tl.dim { color: rgba(0,255,102,0.3); }
         .tl.sep { color: rgba(0,255,102,0.25); }
-        .tl.prompt { color: var(--green); text-shadow: var(--glow-green); }
 
-        /* Sección de instrucciones — tabla ASCII */
-        .tl-table {
-            font-size: 0.78rem;
-            line-height: 1.6;
-            color: #8ca0b8;
-            white-space: pre;
-        }
+        .tl-table { font-size: 0.78rem; line-height: 1.6; color: #8ca0b8; white-space: pre; }
         .tl-table .key { color: var(--cyan); font-weight: bold; }
 
-        /* Botón estilo prompt */
+        @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+        .cursor { animation: blink 1s step-end infinite; }
+
         .cli-btn {
             display: inline-block;
             background: transparent;
@@ -180,51 +163,19 @@
             text-shadow: var(--glow-green);
             transition: background 0.1s, color 0.1s, box-shadow 0.1s;
             margin-top: 4px;
-            position: relative;
         }
         .cli-btn::before { content: "$ "; opacity: 0.7; }
-        .cli-btn:hover {
-            background: var(--green);
-            color: #010508;
-            text-shadow: none;
-            box-shadow: var(--glow-green);
-        }
-        .cli-btn.red {
-            color: var(--red);
-            border-color: var(--red);
-            text-shadow: var(--glow-red);
-        }
+        .cli-btn:hover { background: var(--green); color: #010508; text-shadow: none; box-shadow: var(--glow-green); }
+        .cli-btn.red { color: var(--red); border-color: var(--red); text-shadow: var(--glow-red); }
         .cli-btn.red:hover { background: var(--red); color: #010508; text-shadow: none; box-shadow: var(--glow-red); }
-        .cli-btn.cyan {
-            color: var(--cyan);
-            border-color: var(--cyan);
-            text-shadow: var(--glow-cyan);
-        }
+        .cli-btn.cyan { color: var(--cyan); border-color: var(--cyan); text-shadow: var(--glow-cyan); }
         .cli-btn.cyan:hover { background: var(--cyan); color: #010508; text-shadow: none; box-shadow: var(--glow-cyan); }
 
-        /* Cursor parpadeante */
-        @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
-        .cursor { animation: blink 1s step-end infinite; }
-
-        /* Profile selector */
-        .gfx-selector {
-            display: flex;
-            gap: 20px;
-            margin-top: 4px;
-            align-items: center;
-        }
-        .gfx-selector label {
-            cursor: pointer;
-            color: #8ca0b8;
-            font-size: 0.78rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+        .gfx-selector { display: flex; gap: 20px; margin-top: 4px; align-items: center; }
+        .gfx-selector label { cursor: pointer; color: #8ca0b8; font-size: 0.78rem; display: flex; align-items: center; gap: 6px; }
         .gfx-selector label:hover { color: var(--green); }
         .gfx-selector input[type=radio] { accent-color: var(--green); }
 
-        /* Alert flash */
         .alert-flash {
             position: absolute;
             top: 14px;
@@ -242,11 +193,36 @@
             opacity: 0;
             transition: opacity 0.25s;
             white-space: nowrap;
-            text-shadow: var(--glow-red);
         }
         .alert-flash.active { opacity: 1; }
 
-        /* Responsive font scaling */
+        /* ===== CINEMÁTICA ===== */
+        #cinematicScreen {
+            z-index: 25;
+            background: #030508;
+            cursor: pointer;
+            transition: opacity 0.6s ease;
+        }
+
+        #cineCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .cine-skip-hint {
+            position: absolute;
+            bottom: 10px;
+            right: 18px;
+            font-family: var(--mono);
+            font-size: 0.62rem;
+            color: rgba(0, 255, 102, 0.25);
+            pointer-events: none;
+            z-index: 5;
+            letter-spacing: 1px;
+        }
+
         @media (max-width: 700px) {
             .tl, .tl-table { font-size: 0.65rem; }
             .cli-btn { font-size: 0.72rem; padding: 6px 14px; }
@@ -260,39 +236,37 @@
         <div class="vignette"></div>
         <div class="alert-flash" id="alertFlash">ERROR CRÍTICO DEL SISTEMA</div>
 
-        <!-- CANVAS -->
+        <!-- CANVAS DEL JUEGO -->
         <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-        <!-- ===================== PANTALLA DE INICIO ===================== -->
-        <div class="overlay" id="startScreen">
+        <!-- ======================== CINEMÁTICA INTRO ======================== -->
+        <div class="overlay" id="cinematicScreen">
+            <canvas id="cineCanvas" width="800" height="600"></canvas>
+            <div class="cine-skip-hint">ESPACIO / CLICK — saltar escena</div>
+        </div>
+
+        <!-- ======================== PANTALLA DE INICIO ======================== -->
+        <div class="overlay hidden" id="startScreen">
             <div class="term-chrome">
                 <div class="term-titlebar">
-                    <span class="dot dot-r"></span>
-                    <span class="dot dot-y"></span>
-                    <span class="dot dot-g"></span>
+                    <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
                     <span class="title-text">code_cemetery_v1.0.6 — /dev/tty0 — 80x30</span>
                 </div>
-                <div class="term-body" id="startTermBody">
+                <div class="term-body">
                     <div class="tl sep">╔══════════════════════════════════════════════════════════════════════════════╗</div>
-                    <div class="tl g" style="text-align:center; text-shadow: var(--glow-green);">
+                    <div class="tl g" style="text-align:center; text-shadow: var(--glow-green); font-size:0.58rem; line-height:1.3">
   ██████╗ ██████╗ ██████╗ ███████╗     ██████╗███████╗███╗   ███╗███████╗████████╗███████╗██████╗ ██╗   ██╗
  ██╔════╝██╔═══██╗██╔══██╗██╔════╝    ██╔════╝██╔════╝████╗ ████║██╔════╝╚══██╔══╝██╔════╝██╔══██╗╚██╗ ██╔╝
- ██║     ██║   ██║██║  ██║█████╗      ██║     █████╗  ██╔████╔██║█████╗     ██║   █████╗  ██████╔╝ ╚████╔╝ 
- ██║     ██║   ██║██║  ██║██╔══╝      ██║     ██╔══╝  ██║╚██╔╝██║██╔══╝    ██║   ██╔══╝  ██╔══██╗  ╚██╔╝  
- ╚██████╗╚██████╔╝██████╔╝███████╗    ╚██████╗███████╗██║ ╚═╝ ██║███████╗  ██║   ███████╗██║  ██║   ██║   
-  ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝     ╚═════╝╚══════╝╚═╝     ╚═╝╚══════╝  ╚═╝   ╚══════╝╚═╝  ╚═╝   ╚═╝  
+ ██║     ██║   ██║██║  ██║█████╗      ██║     █████╗  ██╔████╔██║█████╗     ██║   █████╗  ██████╔╝ ╚████╔╝
+ ██║     ██║   ██║██║  ██║██╔══╝      ██║     ██╔══╝  ██║╚██╔╝██║██╔══╝    ██║   ██╔══╝  ██╔══██╗  ╚██╔╝
+ ╚██████╗╚██████╔╝██████╔╝███████╗    ╚██████╗███████╗██║ ╚═╝ ██║███████╗  ██║   ███████╗██║  ██║   ██║
+  ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝     ╚═════╝╚══════╝╚═╝     ╚═╝╚══════╝  ╚═╝   ╚══════╝╚═╝  ╚═╝   ╚═╝
                     </div>
                     <div class="tl sep">╚══════════════════════════════════════════════════════════════════════════════╝</div>
                     <div class="tl">&nbsp;</div>
-                    <div class="tl c">[SECTOR_LOG: SWAP_MEMORY_0xF00D] — INIT SEQUENCE</div>
-                    <div class="tl dim">────────────────────────────────────────────────────────────────────────────────</div>
-                    <div class="tl w">  El sistema sufre una <span style="color:var(--red); text-shadow:var(--glow-red)">MUERTE TÉRMICA</span> catastrófica. Voltaje decayendo.</div>
-                    <div class="tl w">  Controlas a <span style="color:var(--green); text-shadow:var(--glow-green)">Vitt (&amp;)</span>, puntero huérfano de 64-bits. Tu misión:</div>
-                    <div class="tl w">  Transportar <span style="color:var(--cyan); text-shadow:var(--glow-cyan)">Interrupt 0x00 / SIGTERM</span> desde RAM hasta la ALU.</div>
-                    <div class="tl">&nbsp;</div>
+                    <div class="tl c">[SECTOR_LOG: SWAP_MEMORY_0xF00D]  Temperatura: 143°C  Tiempo restante: 8 min</div>
                     <div class="tl dim">────────────────────────────────────────────────────────────────────────────────</div>
                     <div class="tl c">$ help --controls</div>
-                    <div class="tl dim">────────────────────────────────────────────────────────────────────────────────</div>
                     <div class="tl-table">  <span class="key">TECLA</span>   FUNCIÓN                       <span class="key">MECÁNICA</span>
   ─────── ─────────────────────────     ──────────────────────────────────────
   <span class="key">W A S D</span> Mover a Vitt (&amp;)              Tile-based, colisión vs. paredes #
@@ -306,36 +280,31 @@
   <span class="key">E</span>       Interactuar con NPC           Dialogar / Avanzar diálogo
   ─────── ─────────────────────────     ──────────────────────────────────────</div>
                     <div class="tl">&nbsp;</div>
-                    <div class="tl c">[SANDBOX_CONFIG: DEVEL_MODE=1]</div>
-                    <div class="tl-table">  <span class="key">G</span>  Alternar Modo Dios (inmortal)    <span class="key">1</span> Daemon   <span class="key">2</span> Leak   <span class="key">3</span> NullPtr   <span class="key">4</span> Golem</div>
-                    <div class="tl">&nbsp;</div>
-                    <div class="tl dim">────────────────────────────────────────────────────────────────────────────────</div>
                     <div class="tl c">$ graphics --profile:</div>
                     <div class="tl" style="margin-top:4px;">
                         <div class="gfx-selector">
-                            <label><input type="radio" name="gfxProfile" value="high" checked> <span style="color:var(--green)">▸ High</span> — CRT aberración cromática + vibración + partículas</label>
-                            <label><input type="radio" name="gfxProfile" value="low"> <span style="color:var(--cyan)">▸ Low</span>  — Alto rendimiento, gama baja</label>
+                            <label><input type="radio" name="gfxProfile" value="high" checked> <span style="color:var(--green)">▸ High</span> — CRT + vibración + partículas</label>
+                            <label><input type="radio" name="gfxProfile" value="low"> <span style="color:var(--cyan)">▸ Low</span>  — Sin efectos, máximo rendimiento</label>
                         </div>
                     </div>
                     <div class="tl">&nbsp;</div>
                     <div style="display:flex; align-items:center; gap:16px; padding: 4px 0;">
                         <button class="cli-btn" id="startBtn">vitt --initialize<span class="cursor">▋</span></button>
                         <span class="tl dim" style="font-size:0.72rem;">[ Nivel 1: SWAP_Space — ~10 min ]</span>
+                        <button class="cli-btn cyan" id="replayCineBtn" style="font-size:0.7rem; padding:6px 14px;">ver intro de nuevo</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ===================== GAME OVER ===================== -->
+        <!-- ======================== GAME OVER ======================== -->
         <div class="overlay hidden" id="gameOverScreen">
             <div class="term-chrome">
                 <div class="term-titlebar">
-                    <span class="dot dot-r"></span>
-                    <span class="dot dot-y"></span>
-                    <span class="dot dot-g"></span>
+                    <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
                     <span class="title-text" style="color:rgba(255,0,85,0.7)">KERNEL_PANIC — /dev/tty0 — CORE DUMPED</span>
                 </div>
-                <div class="term-body" style="justify-content:center; align-items:flex-start;">
+                <div class="term-body" style="justify-content:center;">
                     <div class="tl r" style="font-size:1.2rem; text-shadow:var(--glow-red); margin-bottom:10px;">[ KERNEL PANIC: CORE DUMPED ]</div>
                     <div class="tl dim">────────────────────────────────────────────────────────────────</div>
                     <div class="tl">&nbsp;</div>
@@ -344,14 +313,12 @@
   Tu dirección física fue liberada por el Garbage Collector.
   Vitt ha dejado un archivo Core Dump en el sector del colapso.
   
-  Si reinicias el hilo y mueres de nuevo en el trayecto,
-  esos bits se perderán para siempre en el éter del storage.
+  El sistema sigue sin apagarse. El silicio sigue calentándose.
   
   Integrity final: 0x00  /  CPU Cycles: 0x00
   
   &gt; Examinando volcado de pila...
-  &gt; Stack trace: NULL_POINTER → SEGFAULT → PROCESS_KILLED
-  &gt; Última dirección válida: 0xDEADBEEF</div>
+  &gt; Stack trace: NULL_POINTER → SEGFAULT → PROCESS_KILLED</div>
                     <div class="tl">&nbsp;</div>
                     <div class="tl dim">────────────────────────────────────────────────────────────────</div>
                     <div class="tl">&nbsp;</div>
@@ -360,16 +327,14 @@
             </div>
         </div>
 
-        <!-- ===================== VICTORIA ===================== -->
+        <!-- ======================== VICTORIA ======================== -->
         <div class="overlay hidden" id="victoryScreen">
             <div class="term-chrome">
                 <div class="term-titlebar">
-                    <span class="dot dot-r"></span>
-                    <span class="dot dot-y"></span>
-                    <span class="dot dot-g"></span>
+                    <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
                     <span class="title-text" style="color:rgba(0,242,254,0.7)">SIGTERM_SUCCESS — /dev/tty0 — SHUTDOWN OK</span>
                 </div>
-                <div class="term-body" style="justify-content:center; align-items:flex-start;">
+                <div class="term-body" style="justify-content:center;">
                     <div class="tl c" style="font-size:1.2rem; text-shadow:var(--glow-cyan); margin-bottom:10px;">[ SUCCESS: SHUTDOWN COMPLETE (0x00) ]</div>
                     <div class="tl dim">────────────────────────────────────────────────────────────────</div>
                     <div class="tl">&nbsp;</div>
@@ -382,7 +347,6 @@
   Daños estructurales: NINGUNO
   Integridad de datos: PRESERVADA
   
-  &gt; Almacenando copia de Vitt II en ROM de arranque...
   &gt; Guardando estado de misión en EEPROM sector 0x3F...
   &gt; Sistema apagado. Hasta el próximo boot.</div>
                     <div class="tl">&nbsp;</div>
@@ -394,120 +358,556 @@
         </div>
     </div>
 
-    <!-- SCRIPTS -->
+    <!-- SCRIPTS DEL JUEGO -->
     <script src="src/audio.js"></script>
     <script src="src/engine.js"></script>
     <script src="src/vitt.js"></script>
     <script src="src/enemies.js"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const startScreen   = document.getElementById('startScreen');
-            const gameOverScreen = document.getElementById('gameOverScreen');
-            const victoryScreen  = document.getElementById('victoryScreen');
-            const startBtn   = document.getElementById('startBtn');
-            const restartBtn = document.getElementById('restartBtn');
-            const victoryBtn = document.getElementById('victoryBtn');
-            const alertFlash = document.getElementById('alertFlash');
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║         CINEMÁTICA DE INTRO — Code_Cemetery: Vitt's Journey     ║
+    // ╚══════════════════════════════════════════════════════════════════╝
+    const CineIntro = (function () {
+        'use strict';
 
-            // Flash overlay messages
-            window.flashAlert = function(text, color) {
-                alertFlash.textContent = text;
-                alertFlash.style.background  = color === 'red'  ? 'rgba(255, 0, 85, 0.25)' : 'rgba(0, 242, 254, 0.2)';
-                alertFlash.style.borderColor = color === 'red'  ? 'var(--red)' : 'var(--cyan)';
-                alertFlash.style.color       = '#ffffff';
-                alertFlash.classList.add('active');
-                setTimeout(() => alertFlash.classList.remove('active'), 2200);
-            };
+        const W = 800, H = 600;
+        const MX = 58;        // margin x
+        const LH = 21;        // line height (px)
+        const CONTENT_Y = 88; // y start of content
 
-            function initGame() {
-                // Boot audio & engine
-                window.GameAudio.init();
-                window.GameAudio.playBGM();
-                window.GameEngine.init('gameCanvas');
-                window.Vitt.init();
+        // Color palette
+        const P = {
+            g:   '#00ff66',
+            c:   '#00f2fe',
+            r:   '#ff0055',
+            y:   '#ffcc00',
+            o:   '#ff8800',
+            w:   '#e2e8f0',
+            dim: 'rgba(0,255,102,0.38)',
+            sep: 'rgba(0,255,102,0.22)'
+        };
 
-                // Player defaults
-                window.Vitt.integrity    = 100;
-                window.Vitt.maxIntegrity = 100;
-                window.Vitt.godMode      = true; // God Mode activado por defecto para sandbox
+        // ── SCENES ─────────────────────────────────────────────────────────
+        // Each line: { t: ms_from_scene_start, text, col, big, blink }
+        const SCENES = [
+            // ─ Escena 0: Boot sequence falla ─────────────────────────────
+            {
+                tag:      '[SECTOR_LOG: BOOT_POST — 00:00:01]',
+                tagColor: P.g,
+                lines: [
+                    { t:    0, text: 'Iniciando Power-On Self-Test (POST)...',          col: P.g  },
+                    { t:  550, text: '  CPU: Intel Core i9-13900K  . . . . . . .  OK   98°C', col: P.g  },
+                    { t:  950, text: '  RAM: 64 GB DDR5-6000  . . . . . . . . . .  OK',  col: P.g  },
+                    { t: 1280, text: '  NVMe SSD 4 TB  . . . . . . . . . . . . . .  OK',  col: P.g  },
+                    { t: 1600, text: '  Sistema de refrigeración líquida  . . . .  [ verificando... ]', col: P.g },
+                    { t: 2200, text: '  Sistema de refrigeración líquida  . . . .  [!! FALLO CRÍTICO !!]', col: P.r },
+                    { t: 2700, text: '', col: P.g },
+                    { t: 2900, text: '⚠  TEMPERATURA CPU: 127°C → 143°C → ???',    col: P.o  },
+                    { t: 3500, text: '⚠  Bomba de refrigeración: SIN RESPUESTA',   col: P.r  },
+                    { t: 4000, text: '⚠  Protocolo de apagado de emergencia: SIN RESPUESTA', col: P.r },
+                    { t: 4600, text: '', col: P.g },
+                    { t: 4800, text: '   DAÑO PERMANENTE AL SILICIO EN:  ~8 MINUTOS', col: P.r, big: false },
+                ],
+                hold: 1800
+            },
 
-                // Game state
-                window.activeEnemies      = [];
-                window.activeSlashes      = [];
-                window.activeProjectiles  = [];
-                window.activeCollectibles = [];
-                window.collectedBits = { bit1: false, bit3: false, bit5: false, bit7: false };
+            // ─ Escena 1: Escaneo de memoria ──────────────────────────────
+            {
+                tag:      '[SECTOR_LOG: ESCANEO_RAM — 00:00:47]',
+                tagColor: P.c,
+                lines: [
+                    { t:    0, text: 'Iniciando búsqueda de agente activo en memoria volátil...', col: P.g },
+                    { t:  650, text: '', col: P.g },
+                    { t:  850, text: '  SECTOR  0x0000  ─────────  [CORRUPTO — datos irrecuperables]', col: P.r },
+                    { t: 1200, text: '  SECTOR  0xDEAD  ─────────  [CORRUPTO — datos irrecuperables]', col: P.r },
+                    { t: 1550, text: '  SECTOR  0xBEEF  ─────────  [CORRUPTO — datos irrecuperables]', col: P.r },
+                    { t: 1900, text: '  SECTOR  0xC0DE  ─────────  [CORRUPTO — datos irrecuperables]', col: P.r },
+                    { t: 2250, text: '  SECTOR  0xF00D  ─────────  [SWAP SPACE — fragmentado, activo]', col: P.y },
+                    { t: 2800, text: '  SECTOR  0x4200  ─────────  [PUNTERO ACTIVO DETECTADO]', col: P.c },
+                    { t: 3400, text: '', col: P.g },
+                    { t: 3600, text: '  IDENTIFICADOR:  &VITT  —  Puntero de 64-bits, no asignado', col: P.c },
+                    { t: 4100, text: '  PAYLOAD:        Interrupt 0x00 / SIGTERM', col: P.c },
+                    { t: 4600, text: '  ESTADO:         FUNCIONAL  ✓', col: P.g },
+                    { t: 5100, text: '  Iniciando carga de contexto...', col: P.g },
+                ],
+                hold: 1500
+            },
 
-                // === Spawn Nivel 1: SWAP Space NPCs ===
-                window.Enemies.spawnOracle(180, 100);
-                window.Enemies.spawnBit0(100, 140);
-                window.Enemies.spawnByte0xAA(440, 220);
-                window.Enemies.spawnSpindleGolem(650, 290);
+            // ─ Escena 2: Vitt despierta ───────────────────────────────────
+            {
+                tag:      '[SECTOR_LOG: ACTIVACIÓN_VITT — 0x4200]',
+                tagColor: P.c,
+                lines: [
+                    { t:    0, text: '', col: P.g },
+                    { t:  200, text: '                          &', col: P.g, big: true },
+                    { t:  900, text: '', col: P.g },
+                    { t: 1100, text: '         [ &VITT — Puntero de datos, serie 64-bit ]', col: P.dim },
+                    { t: 1600, text: '', col: P.g },
+                    { t: 1900, text: '  No recuerdo nada.', col: P.w },
+                    { t: 2700, text: '  Solo sé que existo.', col: P.w },
+                    { t: 3400, text: '  Y que cargo algo importante conmigo.', col: P.w },
+                    { t: 4200, text: '', col: P.g },
+                    { t: 4500, text: '  Una señal. Una interrupción.', col: P.c },
+                    { t: 5200, text: '  Interrupt 0x00 — El apagado seguro del sistema.', col: P.c },
+                    { t: 6000, text: '', col: P.g },
+                    { t: 6300, text: '  Si llego a la ALU... puedo salvar todo esto.', col: P.w },
+                    { t: 7100, text: '  Si no llego... el silicio se derrite.', col: P.o },
+                    { t: 7800, text: '  Y todo lo que existe aquí dentro desaparece.', col: P.r },
+                ],
+                hold: 2000
+            },
 
-                // Enemigos básicos para llenar el espacio
-                window.Enemies.spawnDaemon(320, 140);
-                window.Enemies.spawnLeak(480, 380);
-                window.Enemies.spawnNullPointer(240, 280);
+            // ─ Escena 3: Briefing nivel 1 ────────────────────────────────
+            {
+                tag:      '[SECTOR_LOG: MISIÓN_ASIGNADA — NIVEL_1]',
+                tagColor: P.y,
+                lines: [
+                    { t:    0, text: '  ╔══════════════════════════════════════════════════╗', col: P.g },
+                    { t:  200, text: '  ║     NIVEL 1:  SWAP SPACE — Sector 0xF00D        ║', col: P.g },
+                    { t:  400, text: '  ╠══════════════════════════════════════════════════╣', col: P.g },
+                    { t:  600, text: '  ║  TEMP ACTUAL: 143°C  ↑    TIEMPO RESTANTE: 8m  ║', col: P.o },
+                    { t:  800, text: '  ╚══════════════════════════════════════════════════╝', col: P.g },
+                    { t: 1100, text: '', col: P.g },
+                    { t: 1300, text: '  MISIÓN PRINCIPAL:', col: P.c },
+                    { t: 1700, text: '  ► Atravesar SWAP Space y alcanzar el Bus de Datos', col: P.w },
+                    { t: 2200, text: '  ► Eliminar al Golem del Cabezal (guardián de zona)', col: P.w },
+                    { t: 2700, text: '', col: P.g },
+                    { t: 2900, text: '  MISIONES SECUNDARIAS [OPCIONALES]:', col: P.c },
+                    { t: 3300, text: '  ◌  Escoltar a Bit-0 de vuelta a su celda de memoria', col: P.dim },
+                    { t: 3750, text: '  ◌  Reconstruir el Byte-0xAA para desbloquear el portal', col: P.dim },
+                    { t: 4200, text: '', col: P.g },
+                    { t: 4400, text: '  AMENAZAS DETECTADAS:', col: P.r },
+                    { t: 4800, text: '  ● Daemon Thread (&)  — Agresivo, ataca en cadena', col: P.o },
+                    { t: 5150, text: '  ● Memory Leak (~)   — Deja rastro corrosivo al moverse', col: P.o },
+                    { t: 5500, text: '  ● Null Pointer (Ø)  — Dispara proyectiles de datos nulos', col: P.o },
+                    { t: 5900, text: '  ★ GOLEM DEL CABEZAL — Jefe de zona. Usa los CARRILES.', col: P.r },
+                ],
+                hold: 1800
+            },
 
-                // === Sandbox debug keys ===
-                window.addEventListener('keydown', (e) => {
-                    const key = e.key.toLowerCase();
-                    if (key === 'g') {
-                        window.Vitt.godMode = !window.Vitt.godMode;
-                        window.flashAlert(window.Vitt.godMode ? 'MODO DIOS: ACTIVO' : 'MODO DIOS: INACTIVO',
-                                          window.Vitt.godMode ? 'cyan' : 'red');
-                        if (window.GameAudio?.playParry) window.GameAudio.playParry();
-                    }
-                    if (key === '1') {
-                        const rx = 150 + Math.random() * 500, ry = 100 + Math.random() * 400;
-                        window.Enemies.spawnDaemon(rx, ry);
-                        window.flashAlert('Invocado: Daemon Thread (&)', 'cyan');
-                    }
-                    if (key === '2') {
-                        const rx = 150 + Math.random() * 500, ry = 100 + Math.random() * 400;
-                        window.Enemies.spawnLeak(rx, ry);
-                        window.flashAlert('Invocado: Memory Leak (~)', 'cyan');
-                    }
-                    if (key === '3') {
-                        const rx = 150 + Math.random() * 500, ry = 100 + Math.random() * 400;
-                        window.Enemies.spawnNullPointer(rx, ry);
-                        window.flashAlert('Invocado: Null Pointer (Ø)', 'cyan');
-                    }
-                    if (key === '4') {
-                        window.Enemies.spawnSpindleGolem(650, 290);
-                        window.flashAlert('Invocado: Golem del Cabezal [SPINDLE]', 'red');
-                    }
-                });
+            // ─ Escena 4: Controles y go ───────────────────────────────────
+            {
+                tag:      '[SECTOR_LOG: CARGA_COMPLETA — INICIANDO]',
+                tagColor: P.g,
+                lines: [
+                    { t:    0, text: '  CONTROLES ESENCIALES:', col: P.c },
+                    { t:  400, text: '  W A S D    Mover          J    Atacar (Logic-Slash)', col: P.w },
+                    { t:  800, text: '  K          Parry/Bloqueo  L    Esquivar (invulnerable)', col: P.w },
+                    { t: 1200, text: '  P          Teleportación  E    Hablar con NPC', col: P.w },
+                    { t: 1700, text: '', col: P.g },
+                    { t: 1950, text: '  ─────────────────────────────────────────────────────', col: P.sep },
+                    { t: 2200, text: '  CONSEJO:  El PARRY [K] en el instante justo lo cambia todo.', col: P.g },
+                    { t: 2900, text: '  CONSEJO:  Esquivar con [L] te da frames de invulnerabilidad.', col: P.g },
+                    { t: 3600, text: '  CONSEJO:  Habla con los NPCs (E). Tienen información vital.', col: P.g },
+                    { t: 4300, text: '', col: P.g },
+                    { t: 4600, text: '  &Vitt, el sistema depende de ti.', col: P.c },
+                    { t: 5200, text: '  No falles.', col: P.r },
+                    { t: 5900, text: '', col: P.g },
+                    { t: 6200, text: '  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', col: P.sep },
+                    { t: 6500, text: '  [  ESPACIO · ENTER · CLICK  →  comenzar  ]', col: P.y, blink: true },
+                ],
+                hold: Infinity
+            }
+        ];
 
-                window.flashAlert('SANDBOX: Modo Dios ACTIVO [G]. Invocar: [1,2,3,4]', 'cyan');
-                window.GameEngine.start();
+        // ── STATE ──────────────────────────────────────────────────────────
+        let cnv, ctx2d, onDone;
+        let sceneIdx   = 0;
+        let drawnLines = [];   // fully rendered lines
+        let typeLine   = null; // currently animating line
+        let pending    = [];   // queued lines for this scene
+        let sceneStartT = 0;
+        let lastT       = 0;
+        let blinkT      = 0;
+        let scanOff     = 0;
+        let fadeAlpha   = 0;
+        let titleAlpha  = 0;
+        let raf         = null;
+        let finished    = false;
+        let transitioning = false;
+
+        // ── HELPERS ────────────────────────────────────────────────────────
+        function nextY() {
+            return CONTENT_Y + (drawnLines.length) * LH;
+        }
+
+        function loadScene(idx) {
+            sceneIdx    = idx;
+            drawnLines  = [];
+            typeLine    = null;
+            pending     = SCENES[idx].lines.map(l => Object.assign({}, l));
+            sceneStartT = performance.now();
+            fadeAlpha   = 0;
+            titleAlpha  = 0;
+            transitioning = false;
+        }
+
+        function skipToLast() {
+            if (sceneIdx >= SCENES.length - 1) {
+                // Already on last scene — any input finishes the cinematic
+                endCinematic();
+            } else {
+                loadScene(SCENES.length - 1);
+            }
+        }
+
+        function endCinematic() {
+            if (finished) return;
+            finished = true;
+            document.removeEventListener('keydown', onKey);
+            if (cnv) cnv.removeEventListener('click', onClick);
+            cancelAnimationFrame(raf);
+            // Fade out the cinematic overlay then call onDone
+            const el = document.getElementById('cinematicScreen');
+            el.style.transition = 'opacity 0.7s ease';
+            el.style.opacity = '0';
+            setTimeout(() => {
+                el.classList.add('hidden');
+                el.style.opacity = '';
+                if (onDone) onDone();
+            }, 720);
+        }
+
+        function onKey(e) {
+            if (!['Space', 'Enter', 'Escape'].includes(e.code)) return;
+            skipToLast();
+        }
+
+        function onClick() {
+            skipToLast();
+        }
+
+        // ── MAIN LOOP ──────────────────────────────────────────────────────
+        function loop(ms) {
+            if (finished) return;
+            const dt = Math.min(ms - lastT, 80); // cap dt to avoid jumps
+            lastT    = ms;
+
+            blinkT  += dt;
+            scanOff  = (scanOff + dt * 0.035) % 3;
+
+            // Fade in
+            fadeAlpha  = Math.min(1, fadeAlpha  + dt / 450);
+            titleAlpha = Math.min(1, titleAlpha + dt / 700);
+
+            const elapsed = ms - sceneStartT;
+
+            // Dequeue lines whose t has arrived
+            while (pending.length > 0 && pending[0].t <= elapsed) {
+                const ld = pending.shift();
+                // Flush typewriter if something was being typed
+                if (typeLine !== null) {
+                    drawnLines.push({ ...typeLine, charsDone: typeLine.text.length });
+                    typeLine = null;
+                }
+                if (!ld.text) {
+                    drawnLines.push({ text: '', col: P.g, y: nextY(), blink: false, big: false });
+                } else {
+                    const spd = ld.big ? 120 : 18; // ms per char
+                    typeLine = {
+                        text: ld.text,
+                        col:  ld.col || P.g,
+                        big:  ld.big  || false,
+                        blink: ld.blink || false,
+                        y:    nextY(),
+                        charsDone: 0,
+                        lastCharMs: ms,
+                        charSpd: spd
+                    };
+                }
             }
 
-            window.graphicsProfile = 'high';
+            // Advance typewriter animation
+            if (typeLine !== null) {
+                const toAdd = Math.floor((ms - typeLine.lastCharMs) / typeLine.charSpd);
+                if (toAdd > 0) {
+                    typeLine.charsDone = Math.min(typeLine.text.length, typeLine.charsDone + toAdd);
+                    typeLine.lastCharMs += toAdd * typeLine.charSpd;
+                    if (typeLine.charsDone >= typeLine.text.length) {
+                        drawnLines.push({ ...typeLine });
+                        typeLine = null;
+                    }
+                }
+            }
 
-            startBtn.addEventListener('click', () => {
-                const gfx = document.querySelector('input[name="gfxProfile"]:checked');
-                if (gfx) window.graphicsProfile = gfx.value;
-                startScreen.classList.add('hidden');
-                initGame();
+            // Auto-advance scenes
+            if (!transitioning) {
+                const sc = SCENES[sceneIdx];
+                if (sc.hold !== Infinity && pending.length === 0 && typeLine === null) {
+                    const lastLineT = sc.lines[sc.lines.length - 1].t;
+                    const lastLen   = sc.lines[sc.lines.length - 1].text.length;
+                    const typeTime  = lastLen * 18;
+                    if (elapsed > lastLineT + typeTime + sc.hold) {
+                        transitioning = true;
+                        if (sceneIdx < SCENES.length - 1) {
+                            setTimeout(() => loadScene(sceneIdx + 1), 300);
+                        }
+                    }
+                }
+            }
+
+            draw(ms);
+            raf = requestAnimationFrame(loop);
+        }
+
+        // ── DRAW ───────────────────────────────────────────────────────────
+        function draw(ms) {
+            ctx2d.clearRect(0, 0, W, H);
+
+            // Background
+            ctx2d.fillStyle = '#030508';
+            ctx2d.fillRect(0, 0, W, H);
+
+            const sc = SCENES[sceneIdx];
+
+            // -- SCENE HEADER --
+            ctx2d.globalAlpha = fadeAlpha * titleAlpha;
+
+            // Title pill
+            ctx2d.fillStyle = 'rgba(0,255,102,0.06)';
+            ctx2d.fillRect(0, 0, W, 62);
+            ctx2d.strokeStyle = 'rgba(0,255,102,0.18)';
+            ctx2d.lineWidth = 1;
+            ctx2d.beginPath();
+            ctx2d.moveTo(0, 62); ctx2d.lineTo(W, 62);
+            ctx2d.stroke();
+
+            // Dots
+            [[18, 28, '#ff5f56'], [34, 28, '#ffbd2e'], [50, 28, '#27c93f']].forEach(([x, y, c]) => {
+                ctx2d.fillStyle = c;
+                ctx2d.beginPath(); ctx2d.arc(x, y, 5, 0, Math.PI * 2); ctx2d.fill();
             });
 
-            restartBtn.addEventListener('click', () => location.reload());
-            victoryBtn.addEventListener('click', () => location.reload());
+            // Tag text
+            ctx2d.font = "bold 10px 'Courier Prime', monospace";
+            ctx2d.textAlign = 'left';
+            ctx2d.textBaseline = 'middle';
+            ctx2d.fillStyle = sc.tagColor || P.g;
+            ctx2d.fillText(sc.tag, 70, 28);
 
-            window.triggerGameOver = function() {
-                if (window.GameAudio?.stopBGM)  window.GameAudio.stopBGM();
-                if (window.GameAudio?.playDeath) window.GameAudio.playDeath();
-                gameOverScreen.classList.remove('hidden');
-            };
+            // Scene counter
+            ctx2d.textAlign = 'right';
+            ctx2d.fillStyle = 'rgba(0,255,102,0.3)';
+            ctx2d.fillText(`[ ${sceneIdx + 1} / ${SCENES.length} ]`, W - 18, 28);
 
-            window.triggerVictory = function() {
-                if (window.GameAudio?.stopBGM)    window.GameAudio.stopBGM();
-                if (window.GameAudio?.playLevelUp) window.GameAudio.playLevelUp();
-                victoryScreen.classList.remove('hidden');
-            };
+            // Separator
+            ctx2d.globalAlpha = fadeAlpha * 0.5;
+            ctx2d.strokeStyle = 'rgba(0,255,102,0.15)';
+            ctx2d.lineWidth = 1;
+            ctx2d.setLineDash([4, 8]);
+            ctx2d.beginPath();
+            ctx2d.moveTo(MX, 72); ctx2d.lineTo(W - MX, 72);
+            ctx2d.stroke();
+            ctx2d.setLineDash([]);
+
+            ctx2d.globalAlpha = fadeAlpha;
+            ctx2d.textAlign = 'left';
+            ctx2d.textBaseline = 'alphabetic';
+
+            // -- DRAWN LINES --
+            drawnLines.forEach(line => {
+                if (!line.text) return;
+                const fnt = line.big
+                    ? "bold 28px 'Courier Prime', monospace"
+                    : "13px 'Courier Prime', monospace";
+                ctx2d.font = fnt;
+
+                // Blink effect for special lines
+                let alpha = fadeAlpha;
+                if (line.blink) {
+                    alpha *= Math.sin(ms * 0.004) > 0 ? 1.0 : 0.35;
+                }
+                ctx2d.globalAlpha = alpha;
+
+                // Shadow glow for big text
+                if (line.big) {
+                    ctx2d.shadowBlur  = 18;
+                    ctx2d.shadowColor = line.col;
+                } else {
+                    ctx2d.shadowBlur = 0;
+                }
+
+                ctx2d.fillStyle = line.col;
+                ctx2d.fillText(line.text, MX, line.y);
+                ctx2d.shadowBlur  = 0;
+                ctx2d.globalAlpha = fadeAlpha;
+            });
+
+            // -- CURRENT TYPEWRITER LINE --
+            if (typeLine !== null) {
+                const fnt = typeLine.big
+                    ? "bold 28px 'Courier Prime', monospace"
+                    : "13px 'Courier Prime', monospace";
+                ctx2d.font = fnt;
+                ctx2d.fillStyle = typeLine.col;
+                ctx2d.shadowBlur  = typeLine.big ? 18 : 0;
+                ctx2d.shadowColor = typeLine.col;
+
+                const shown = typeLine.text.slice(0, typeLine.charsDone);
+                ctx2d.fillText(shown, MX, typeLine.y);
+
+                // Blinking cursor at end
+                const curX = MX + ctx2d.measureText(shown).width;
+                const curOn = Math.floor(ms / 380) % 2 === 0;
+                if (curOn) {
+                    ctx2d.fillStyle = P.g;
+                    ctx2d.shadowBlur = 6; ctx2d.shadowColor = P.g;
+                    ctx2d.fillText('▋', curX, typeLine.y);
+                }
+                ctx2d.shadowBlur = 0;
+            }
+
+            // -- SCANLINES --
+            ctx2d.globalAlpha = 0.05;
+            ctx2d.fillStyle = '#000';
+            for (let y = (scanOff | 0); y < H; y += 3) {
+                ctx2d.fillRect(0, y, W, 1);
+            }
+
+            // -- VIGNETTE --
+            ctx2d.globalAlpha = 0.65;
+            const vig = ctx2d.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, H * 0.82);
+            vig.addColorStop(0, 'transparent');
+            vig.addColorStop(1, 'rgba(0,0,0,0.88)');
+            ctx2d.fillStyle = vig;
+            ctx2d.fillRect(0, 0, W, H);
+
+            // -- BORDER GLOW --
+            ctx2d.globalAlpha = 0.12 * fadeAlpha;
+            ctx2d.strokeStyle = P.g;
+            ctx2d.lineWidth = 2;
+            ctx2d.strokeRect(1, 1, W - 2, H - 2);
+
+            ctx2d.globalAlpha = 1;
+        }
+
+        // ── PUBLIC API ─────────────────────────────────────────────────────
+        return {
+            start(canvasEl, cb) {
+                cnv    = canvasEl;
+                ctx2d  = canvasEl.getContext('2d');
+                onDone = cb;
+                finished      = false;
+                transitioning = false;
+                loadScene(0);
+                lastT = performance.now();
+                document.addEventListener('keydown', onKey);
+                canvasEl.addEventListener('click', onClick);
+                raf = requestAnimationFrame(loop);
+            },
+            replay(cb) {
+                // Re-show the cinematic overlay and restart
+                const el = document.getElementById('cinematicScreen');
+                el.classList.remove('hidden');
+                el.style.opacity = '1';
+                this.start(document.getElementById('cineCanvas'), cb);
+            }
+        };
+    })();
+
+    // ╔══════════════════════════════════════════════════════╗
+    // ║                  GAME CONTROLLER                     ║
+    // ╚══════════════════════════════════════════════════════╝
+    document.addEventListener('DOMContentLoaded', () => {
+        const startScreen    = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const victoryScreen  = document.getElementById('victoryScreen');
+        const startBtn       = document.getElementById('startBtn');
+        const restartBtn     = document.getElementById('restartBtn');
+        const victoryBtn     = document.getElementById('victoryBtn');
+        const replayCineBtn  = document.getElementById('replayCineBtn');
+        const alertFlash     = document.getElementById('alertFlash');
+
+        // Flash overlay messages
+        window.flashAlert = function (text, color) {
+            alertFlash.textContent = text;
+            alertFlash.style.background  = color === 'red'  ? 'rgba(255, 0, 85, 0.25)' : 'rgba(0, 242, 254, 0.2)';
+            alertFlash.style.borderColor = color === 'red'  ? 'var(--red)' : 'var(--cyan)';
+            alertFlash.style.color       = '#ffffff';
+            alertFlash.classList.add('active');
+            setTimeout(() => alertFlash.classList.remove('active'), 2200);
+        };
+
+        function initGame() {
+            window.GameAudio.init();
+            window.GameAudio.playBGM();
+            window.GameEngine.init('gameCanvas');
+            window.Vitt.init();
+
+            window.Vitt.integrity    = 100;
+            window.Vitt.maxIntegrity = 100;
+            window.Vitt.godMode      = true;
+
+            window.activeEnemies      = [];
+            window.activeSlashes      = [];
+            window.activeProjectiles  = [];
+            window.activeCollectibles = [];
+            window.collectedBits = { bit1: false, bit3: false, bit5: false, bit7: false };
+
+            // Nivel 1: SWAP Space
+            window.Enemies.spawnOracle(180, 100);
+            window.Enemies.spawnBit0(100, 140);
+            window.Enemies.spawnByte0xAA(440, 220);
+            window.Enemies.spawnSpindleGolem(650, 290);
+            window.Enemies.spawnDaemon(320, 140);
+            window.Enemies.spawnLeak(480, 380);
+            window.Enemies.spawnNullPointer(240, 280);
+
+            // Debug keys
+            window.addEventListener('keydown', (e) => {
+                const key = e.key.toLowerCase();
+                if (key === 'g') {
+                    window.Vitt.godMode = !window.Vitt.godMode;
+                    window.flashAlert(window.Vitt.godMode ? 'MODO DIOS: ACTIVO' : 'MODO DIOS: INACTIVO',
+                                      window.Vitt.godMode ? 'cyan' : 'red');
+                }
+                if (key === '1') { window.Enemies.spawnDaemon(150 + Math.random()*500, 100 + Math.random()*400); window.flashAlert('Invocado: Daemon (&)', 'cyan'); }
+                if (key === '2') { window.Enemies.spawnLeak(150 + Math.random()*500, 100 + Math.random()*400);   window.flashAlert('Invocado: Memory Leak (~)', 'cyan'); }
+                if (key === '3') { window.Enemies.spawnNullPointer(150 + Math.random()*500, 100 + Math.random()*400); window.flashAlert('Invocado: Null Pointer (Ø)', 'cyan'); }
+                if (key === '4') { window.Enemies.spawnSpindleGolem(650, 290); window.flashAlert('Invocado: Golem del Cabezal [SPINDLE]', 'red'); }
+            });
+
+            window.flashAlert('SANDBOX: Modo Dios ACTIVO [G]. Invocar: [1-4]', 'cyan');
+            window.GameEngine.start();
+        }
+
+        window.graphicsProfile = 'high';
+
+        // ── CINEMATIC → START SCREEN ──────────────────────────────────────
+        CineIntro.start(document.getElementById('cineCanvas'), () => {
+            startScreen.classList.remove('hidden');
         });
+
+        replayCineBtn.addEventListener('click', () => {
+            startScreen.classList.add('hidden');
+            CineIntro.replay(() => {
+                startScreen.classList.remove('hidden');
+            });
+        });
+
+        startBtn.addEventListener('click', () => {
+            const gfx = document.querySelector('input[name="gfxProfile"]:checked');
+            if (gfx) window.graphicsProfile = gfx.value;
+            startScreen.classList.add('hidden');
+            initGame();
+        });
+
+        restartBtn.addEventListener('click', () => location.reload());
+        victoryBtn.addEventListener('click', () => location.reload());
+
+        window.triggerGameOver = function () {
+            if (window.GameAudio?.stopBGM)  window.GameAudio.stopBGM();
+            if (window.GameAudio?.playDeath) window.GameAudio.playDeath();
+            gameOverScreen.classList.remove('hidden');
+        };
+
+        window.triggerVictory = function () {
+            if (window.GameAudio?.stopBGM)    window.GameAudio.stopBGM();
+            if (window.GameAudio?.playLevelUp) window.GameAudio.playLevelUp();
+            victoryScreen.classList.remove('hidden');
+        };
+    });
     </script>
 </body>
 </html>
