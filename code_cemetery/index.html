@@ -829,30 +829,141 @@
             setTimeout(() => alertFlash.classList.remove('active'), 2200);
         };
 
+        let gameOverTriggered = false;
+        let victoryTriggered = false;
+        window.currentLevel = 0;
+
+        window.loadLevel = function (levelNum) {
+            window.currentLevel = levelNum;
+            gameOverTriggered = false;
+            victoryTriggered = false;
+            
+            // 2. Reset entity lists
+            window.activeEnemies = [];
+            window.activeSlashes = [];
+            window.activeProjectiles = [];
+            window.activeCollectibles = [];
+            window.activeTraps = [];
+            window.collectedBits = { bit1: false, bit3: false, bit5: false, bit7: false };
+            window.byteAAInstance = null;
+            window.oscilloscopeActive = false;
+            if (window.Enemies && typeof window.Enemies.resetMinigameState === 'function') {
+                window.Enemies.resetMinigameState();
+            }
+
+            // 3. Re-initialize wall layout
+            if (window.GameEngine && typeof window.GameEngine.initWalls === 'function') {
+                window.GameEngine.initWalls();
+            }
+
+            // 4. Re-render static canvas
+            if (window.GameEngine && typeof window.GameEngine.initStaticCanvas === 'function') {
+                window.GameEngine.initStaticCanvas();
+            }
+
+            // 5. Re-initialize Vitt
+            if (window.Vitt && typeof window.Vitt.init === 'function') {
+                window.Vitt.init();
+            }
+            
+            if (window.Vitt) {
+                window.Vitt.integrity = 100;
+                window.Vitt.maxIntegrity = 100;
+                window.Vitt.godMode = false; // Disabled by default for gameplay stakes
+            }
+
+            // 6. Spawn entities based on levelNum
+            if (levelNum === 0) {
+                // Segment 1: Movement check
+                window.Enemies.spawnTutorialGuide(160, 100, '?', 'PT_Guia_Mover', [
+                    "Guia de Movimiento: ¡Vitt! Has despertado como un puntero de 64 bits.",
+                    "Usa [W][A][S][D] (o flechas de direccion) para moverte por el bus.",
+                    "Sigue el camino hacia la derecha."
+                ]);
+
+                // Segment 2: Logic-Slash [J] check
+                window.Enemies.spawnTutorialGuide(260, 100, 'i', 'PT_Guia_Slash', [
+                    "Guia de Logic-Slash: Una barrera de datos corruptos ('C') bloquea tu camino.",
+                    "Parate frente a ella, apunta con tu direccion y presiona [J] para atacarla y destruirla."
+                ]);
+                window.Enemies.spawnDestructibleBarrier(320, 100);
+
+                // Segment 3: Hex Dodge [L] check
+                window.Enemies.spawnTutorialGuide(400, 100, 'i', 'PT_Guia_Dodge', [
+                    "Guia de Hex-Dodge: Frente a ti hay un abismo de memoria vacia (void).",
+                    "Parate al borde del abismo, apunta a la derecha y presiona [L] para esquivar/saltar."
+                ]);
+
+                // Segment 4: Block & Parry [K] check
+                window.Enemies.spawnTutorialGuide(720, 140, 'i', 'PT_Guia_Parry', [
+                    "Guia de Bloqueo/Parry: Al bajar, un drone disparara proyectiles.",
+                    "Manten [K] para bloquear y reducir dano (consume CPU), o presiona [K] en el instante justo para hacer Parry Perfecto.",
+                    "Un Parry Perfecto reflejara el proyectil y te devolvera CPU."
+                ]);
+                window.Enemies.spawnTutorialDrone(560, 200, 120, 3);
+                window.Enemies.spawnTutorialGuide(660, 200, 'i', 'PT_Guia_Combate', [
+                    "Combate: Bloquea o desvia los proyectiles del drone de pruebas para avanzar hacia la izquierda."
+                ]);
+
+                // Segment 5: Stealth/Cifrado [U] check
+                window.Enemies.spawnTutorialGuide(420, 200, 'i', 'PT_Guia_Cifrado', [
+                    "Guia de Cifrado: Delante hay una camara de seguridad que escanea el area.",
+                    "Si te detecta, disparara rafagas letales de bytes.",
+                    "Presiona [U] para activar el Cifrado. Te volveras invisible, pero drenara tu CPU por segundo.",
+                    "Cruza el rango de escaneo mientras estas cifrado."
+                ]);
+                window.Enemies.spawnSecurityCamera(240, 200, 1); // Pointing right
+
+                // Segment 6: Bitflip [I] check
+                window.Enemies.spawnTutorialGuide(80, 240, 'i', 'PT_Guia_Bitflip', [
+                    "Guia de Bitflip: Una barrera laser de seguridad bloquea el camino.",
+                    "Presiona [I] para entrar en modo apuntado. Mueve la mira con [W][A][S][D].",
+                    "Apunta al emisor de laser y presiona [I] o [J] para hackearlo e invertir sus bits."
+                ]);
+                window.Enemies.spawnLaserGate(300, 300);
+
+                // Segment 7: Overflow [O] check
+                window.Enemies.spawnTutorialGuide(400, 300, 'i', 'PT_Guia_Overflow', [
+                    "Guia de Overflow: Un enjambre de malware bloquea el camino.",
+                    "Son inmunes a ataques normales debido a su numero.",
+                    "Presiona [O] para activar un Desbordamiento (Overflow). Consumira toda tu CPU para liberar una gran explosion radial."
+                ]);
+                window.Enemies.spawnMinorCorruption(520, 300);
+                window.Enemies.spawnMinorCorruption(540, 300);
+                window.Enemies.spawnMinorCorruption(560, 300);
+
+                // Segment 8: Cache Prefetch [P] check
+                window.Enemies.spawnTutorialGuide(680, 360, 'i', 'PT_Guia_Prefetch', [
+                    "Guia de Cache Prefetch: Este abismo es de 4 celdas. Esquivar con [L] fallara.",
+                    "Apunta a la izquierda y presiona [P] para usar Prefetch de Cache (salto de 6 celdas).",
+                    "Te moveras instantaneamente al otro lado sin riesgo."
+                ]);
+
+                // Segment 9: Exit
+                window.Enemies.spawnTutorialGuide(260, 400, 'H', 'PT_Guia_Fin', [
+                    "Fin del Entrenamiento: ¡Felicidades Vitt, estas listo!",
+                    "Entra al portal giratorio para iniciar la transferencia al Sector SWAP principal."
+                ]);
+                window.Enemies.spawnTutorialPortal(160, 400);
+            } else if (levelNum === 1) {
+                // Original SWAP Space Entities
+                window.Enemies.spawnOracle(180, 100);
+                window.Enemies.spawnBit0(100, 140);
+                window.Enemies.spawnByte0xAA(440, 220);
+                window.Enemies.spawnSpindleGolem(650, 290);
+                window.Enemies.spawnDaemon(320, 140);
+                window.Enemies.spawnLeak(480, 380);
+                window.Enemies.spawnNullPointer(240, 280);
+
+                window.flashAlert("SECTOR SWAP CARGADO", "cyan");
+            }
+        };
+
         function initGame() {
             window.GameAudio.init();
             window.GameAudio.playBGM();
             window.GameEngine.init('gameCanvas');
-            window.Vitt.init();
-
-            window.Vitt.integrity    = 100;
-            window.Vitt.maxIntegrity = 100;
-            window.Vitt.godMode      = true;
-
-            window.activeEnemies      = [];
-            window.activeSlashes      = [];
-            window.activeProjectiles  = [];
-            window.activeCollectibles = [];
-            window.collectedBits = { bit1: false, bit3: false, bit5: false, bit7: false };
-
-            // Nivel 1: SWAP Space
-            window.Enemies.spawnOracle(180, 100);
-            window.Enemies.spawnBit0(100, 140);
-            window.Enemies.spawnByte0xAA(440, 220);
-            window.Enemies.spawnSpindleGolem(650, 290);
-            window.Enemies.spawnDaemon(320, 140);
-            window.Enemies.spawnLeak(480, 380);
-            window.Enemies.spawnNullPointer(240, 280);
+            window.loadLevel(0);
 
             // Debug keys
             window.addEventListener('keydown', (e) => {
@@ -897,12 +1008,16 @@
         victoryBtn.addEventListener('click', () => location.reload());
 
         window.triggerGameOver = function () {
+            if (gameOverTriggered) return;
+            gameOverTriggered = true;
             if (window.GameAudio?.stopBGM)  window.GameAudio.stopBGM();
             if (window.GameAudio?.playDeath) window.GameAudio.playDeath();
             gameOverScreen.classList.remove('hidden');
         };
 
         window.triggerVictory = function () {
+            if (victoryTriggered) return;
+            victoryTriggered = true;
             if (window.GameAudio?.stopBGM)    window.GameAudio.stopBGM();
             if (window.GameAudio?.playLevelUp) window.GameAudio.playLevelUp();
             victoryScreen.classList.remove('hidden');

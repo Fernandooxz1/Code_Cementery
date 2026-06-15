@@ -317,9 +317,39 @@ window.GameEngine = {
     },
 
     initWalls() {
-        // Redesigned Level 1 'SWAP Space' layout
-        // Vitt spawns at gridX = 5, gridY = 5 (row 5, col 10/11)
-        const layout = [
+        const layout0 = [
+            "                                                                                ",
+            "                                                                                ",
+            "                                                                                ",
+            "                                                                                ",
+            "                                                                                ",
+            "      ##########################################    ######################      ",
+            "                                                                        ##      ",
+            "                                                                        ##      ",
+            "                                                                        ##      ",
+            "                                                                        ##      ",
+            "        #################################################################       ",
+            "        ##                                                                      ",
+            "        ##                                                                      ",
+            "        ##                                                                      ",
+            "        ##                                                                      ",
+            "        ##############################################################          ",
+            "                                                                    ##          ",
+            "                                                                    ##          ",
+            "                                                                    ##          ",
+            "                                                                    ##          ",
+            "      ##################################        ######################          ",
+            "                                                                                ",
+            "                                                                                ",
+            "                                                                                ",
+            "                                                                                ",
+            "                                                                                ",
+            "                                                                                ",
+            "                                                                                ",
+            "                                                                                ",
+            "                                                                                "
+        ];
+        const layout1 = [
             "################################################################################",
             "################################################################################",
             "################################################################################",
@@ -351,11 +381,12 @@ window.GameEngine = {
             "################################################################################",
             "################################################################################"
         ];
+        const currentLayout = (window.currentLevel === 1) ? layout1 : layout0;
         this.walls = [];
         for (let r = 0; r < 30; r++) {
             this.walls[r] = [];
             for (let c = 0; c < 80; c++) {
-                this.walls[r][c] = (layout[r][c] === '#');
+                this.walls[r][c] = (currentLayout[r][c] === '#');
             }
         }
     },
@@ -776,4 +807,16 @@ window.GameEngine = {
 
 window.isTileVoid = function(col, row) {
     return window.GameEngine.isTileVoid(col, row);
+};
+
+window.isTileSolid = function(col, row) {
+    if (window.activeEnemies) {
+        for (let i = 0; i < window.activeEnemies.length; i++) {
+            const ent = window.activeEnemies[i];
+            if (ent.isSolid && ent.gridX === col && ent.gridY === row) {
+                return true;
+            }
+        }
+    }
+    return false;
 };

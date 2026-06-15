@@ -424,14 +424,34 @@
     function updateSlashes() {
         // Dialogue progression input check
         if (currentDialogue) {
+            if (currentDialogue.charsVisible === undefined) {
+                currentDialogue.charsVisible = 0;
+            }
+            const rawLine = currentDialogue.lines[currentDialogue.lineIndex] || '';
+            if (currentDialogue.charsVisible < rawLine.length) {
+                const oldVisible = Math.floor(currentDialogue.charsVisible);
+                currentDialogue.charsVisible += 0.8; // typing speed: 0.8 chars per frame
+                const newVisible = Math.min(rawLine.length, Math.floor(currentDialogue.charsVisible));
+                if (newVisible > oldVisible && newVisible < rawLine.length) {
+                    if (window.GameAudio && typeof window.GameAudio.playCodeBeep === 'function') {
+                        window.GameAudio.playCodeBeep();
+                    }
+                }
+            }
+
             if (window.GameEngine && window.GameEngine.keys && window.GameEngine.keys['E']) {
                 if (!dialogueAdvanceKeyPressed) {
                     dialogueAdvanceKeyPressed = true;
-                    currentDialogue.lineIndex++;
-                    if (currentDialogue.lineIndex >= currentDialogue.lines.length) {
-                        const cb = currentDialogue.onClose;
-                        currentDialogue = null;
-                        if (typeof cb === 'function') cb();
+                    if (currentDialogue.charsVisible < rawLine.length) {
+                        currentDialogue.charsVisible = rawLine.length;
+                    } else {
+                        currentDialogue.lineIndex++;
+                        currentDialogue.charsVisible = 0;
+                        if (currentDialogue.lineIndex >= currentDialogue.lines.length) {
+                            const cb = currentDialogue.onClose;
+                            currentDialogue = null;
+                            if (typeof cb === 'function') cb();
+                        }
                     }
                 }
             } else {
@@ -2532,7 +2552,9 @@
                 mainCtx.fillStyle = '#e2e8f0';
                 mainCtx.font = "12px 'Courier Prime', monospace";
                 const raw = currentDialogue.lines[currentDialogue.lineIndex] || '';
-                const wrapped = wrapText(raw, 72);
+                const visibleLen = Math.floor(currentDialogue.charsVisible !== undefined ? currentDialogue.charsVisible : raw.length);
+                const visibleText = raw.slice(0, visibleLen);
+                const wrapped = wrapText(visibleText, 72);
                 wrapped.slice(0, 3).forEach((subLine, idx) => {
                     mainCtx.fillText(subLine, 66, 493 + idx * 17);
                 });
@@ -2832,6 +2854,444 @@
             };
             window.activeEnemies.push(golem);
             return golem;
+        },
+
+        resetMinigameState() {
+            oscilloscopeActive = false;
+            currentDialogue = null;
+        },
+
+        spawnTutorialGuide(x, y, symbol, title, lines) {
+            const gridX = Math.round(x / 20);
+            const gridY = Math.round(y / 20);
+            const guide = {
+                x: gridX * 20,
+                y: gridY * 20,
+                gridX, gridY,
+                width: 20,
+                height: 20,
+                integrity: 999999,
+                maxIntegrity: 999999,
+                type: 'tutorial_guide',
+                symbol: symbol || '?',
+                title: title || 'Guia',
+                lines: lines || [],
+                isNPC: true,
+                interactKeyPressed: false,
+                update(dt) {
+                    const target = window.Vitt;
+                    if (!target) return;
+                    if (this.dialogueCooldown === undefined) {
+                        this.dialogueCooldown = 0;
+                    }
+                    if (this.dialogueCooldown > 0) {
+                        this.dialogueCooldown -= dt * 60;
+                    }
+                    if (!currentDialogue && window.GameEngine && window.GameEngine.keys && window.GameEngine.keys['E']) {
+                        if (!this.interactKeyPressed && this.dialogueCooldown <= 0) {
+                            this.interactKeyPressed = true;
+                            const dx = target.x - this.x;
+                            const dy = target.y - this.y;
+                            if (dx*dx + dy*dy < 45*45) {
+                                currentDialogue = {
+                                    speaker: this.title,
+                                    lines: this.lines,
+                                    lineIndex: 0,
+                                    charsVisible: 0,
+                                    cooldown: 20,
+                                    onClose: () => {
+                                        this.dialogueCooldown = 60; // 1 second delay to avoid immediate restart
+                                    }
+                                };
+                            }
+                        }
+                    } else if (!window.GameEngine || !window.GameEngine.keys || !window.GameEngine.keys['E']) {
+                        this.interactKeyPressed = false;
+                    }
+                },
+                draw(ctx) {
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#00f2fe';
+                    ctx.font = "bold 20px 'Courier Prime', monospace";
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#00f2fe';
+                    ctx.fillText(this.symbol, this.x + 10, this.y + 10);
+                    
+                    const target = window.Vitt;
+                    if (target) {
+                        const dx = target.x - this.x;
+                        const dy = target.y - this.y;
+                        if (dx*dx + dy*dy < 40*40 && !currentDialogue) {
+                            ctx.font = "8px 'Courier Prime', monospace";
+                            ctx.fillStyle = '#00ff66';
+                            ctx.fillText("[E] LEER", this.x + 10, this.y - 12);
+                        }
+                    }
+                    ctx.restore();
+                }
+            };
+            window.activeEnemies.push(guide);
+            return guide;
+        },
+
+        spawnDestructibleBarrier(x, y) {
+            const gridX = Math.round(x / 20);
+            const gridY = Math.round(y / 20);
+            const barrier = {
+                x: gridX * 20,
+                y: gridY * 20,
+                gridX, gridY,
+                width: 20,
+                height: 20,
+                integrity: 1,
+                maxIntegrity: 1,
+                type: 'barrier',
+                symbol: 'C',
+                isNPC: false,
+                isSolid: true,
+                hitCooldown: 0,
+                flashTimer: 0,
+                hitBySlashes: [],
+                update(dt) {
+                    if (this.hitCooldown > 0) this.hitCooldown -= dt * 60;
+                },
+                draw(ctx) {
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    let color = '#ff8800';
+                    if (this.flashTimer > 0) color = '#ffffff';
+                    ctx.fillStyle = color;
+                    ctx.font = "bold 20px 'Courier Prime', monospace";
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = color;
+                    ctx.fillText('C', this.x + 10, this.y + 10);
+                    
+                    ctx.font = "bold 8px 'Courier Prime', monospace";
+                    ctx.fillStyle = '#ff8800';
+                    ctx.fillText("BARRERA", this.x + 10, this.y - 12);
+                    ctx.restore();
+                }
+            };
+            window.activeEnemies.push(barrier);
+            return barrier;
+        },
+
+        spawnTutorialDrone(x, y, shootInterval = 120, bulletSpeed = 3) {
+            const gridX = Math.round(x / 20);
+            const gridY = Math.round(y / 20);
+            const drone = {
+                x: gridX * 20,
+                y: gridY * 20,
+                gridX, gridY,
+                width: 20,
+                height: 20,
+                integrity: 999999,
+                maxIntegrity: 999999,
+                type: 'tutorial_drone',
+                symbol: 'D',
+                isNPC: true,
+                shootTimer: shootInterval,
+                shootInterval: shootInterval,
+                bulletSpeed: bulletSpeed,
+                update(dt) {
+                    this.shootTimer -= 1;
+                    if (this.shootTimer <= 0) {
+                        this.shootTimer = this.shootInterval;
+                        const arrow = {
+                            id: Math.random(),
+                            x: this.x,
+                            y: this.y + 10,
+                            vx: -this.bulletSpeed,
+                            vy: 0,
+                            width: 10,
+                            height: 8,
+                            symbol: '<-',
+                            owner: 'enemy',
+                            damage: 5,
+                            lifetime: 180
+                        };
+                        window.activeProjectiles.push(arrow);
+                    }
+                },
+                draw(ctx) {
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#00f2fe';
+                    ctx.font = "bold 20px 'Courier Prime', monospace";
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#00f2fe';
+                    ctx.fillText('D', this.x + 10, this.y + 10);
+                    
+                    ctx.font = "8px 'Courier Prime', monospace";
+                    ctx.fillStyle = '#cbd5e0';
+                    ctx.fillText("Drone Pruebas", this.x + 10, this.y - 12);
+                    ctx.restore();
+                }
+            };
+            window.activeEnemies.push(drone);
+            return drone;
+        },
+
+        spawnSecurityCamera(x, y, dirX = -1) {
+            const gridX = Math.round(x / 20);
+            const gridY = Math.round(y / 20);
+            const camera = {
+                x: gridX * 20,
+                y: gridY * 20,
+                gridX, gridY,
+                width: 20,
+                height: 20,
+                integrity: 999999,
+                maxIntegrity: 999999,
+                type: 'security_camera',
+                symbol: 'S',
+                isNPC: true,
+                shootTimer: 0,
+                dirX: dirX,
+                detected: false,
+                update(dt) {
+                    const target = window.Vitt;
+                    if (!target) return;
+                    
+                    const myGridX = this.gridX;
+                    const myGridY = this.gridY;
+                    const pGridX = target.gridX;
+                    const pGridY = target.gridY;
+                    
+                    const scanRange = 12; // Increased detection range
+                    let currentlyDetected = false;
+                    if (pGridY === myGridY) {
+                        if (this.dirX < 0 && pGridX < myGridX && pGridX >= myGridX - scanRange) {
+                            currentlyDetected = true;
+                        } else if (this.dirX > 0 && pGridX > myGridX && pGridX <= myGridX + scanRange) {
+                            currentlyDetected = true;
+                        }
+                    }
+                    
+                    if (currentlyDetected) {
+                        if (target.isEncrypted) {
+                            this.detected = false;
+                        } else {
+                            this.detected = true;
+                            if (this.shootTimer > 0) {
+                                this.shootTimer -= 1;
+                            } else {
+                                this.shootTimer = 15; // Shoots much faster (every 15 frames)
+                                const arrow = {
+                                    id: Math.random(),
+                                    x: this.x,
+                                    y: this.y + 10,
+                                    vx: this.dirX * 8, // Bullet speed increased from 4 to 8
+                                    vy: 0,
+                                    width: 10,
+                                    height: 8,
+                                    symbol: '*',
+                                    owner: 'enemy',
+                                    damage: 15, // Damage increased from 10 to 15
+                                    lifetime: 120
+                                };
+                                window.activeProjectiles.push(arrow);
+                                if (window.GameAudio && typeof window.GameAudio.playAlarm === 'function') {
+                                    window.GameAudio.playAlarm(0.3);
+                                }
+                            }
+                        }
+                    } else {
+                        this.detected = false;
+                    }
+                },
+                draw(ctx) {
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    let color = '#00ff66';
+                    if (this.detected) color = '#ff0055';
+                    
+                    ctx.fillStyle = color;
+                    ctx.font = "bold 20px 'Courier Prime', monospace";
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = color;
+                    ctx.fillText('S', this.x + 10, this.y + 10);
+                    
+                    ctx.strokeStyle = this.detected ? 'rgba(255, 0, 85, 0.15)' : 'rgba(0, 255, 102, 0.08)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 10, this.y + 10);
+                    ctx.lineTo(this.x + 10 + this.dirX * 12 * 20, this.y + 10);
+                    ctx.stroke();
+                    
+                    ctx.font = "8px 'Courier Prime', monospace";
+                    ctx.fillStyle = '#cbd5e0';
+                    ctx.fillText("Cámara Seguridad", this.x + 10, this.y - 12);
+                    ctx.restore();
+                }
+            };
+            window.activeEnemies.push(camera);
+            return camera;
+        },
+
+        spawnLaserGate(x, y) {
+            const gridX = Math.round(x / 20);
+            const gridY = Math.round(y / 20);
+            const gate = {
+                x: gridX * 20,
+                y: gridY * 20,
+                gridX, gridY,
+                width: 20,
+                height: 20,
+                integrity: 999999,
+                maxIntegrity: 999999,
+                type: 'laser_gate',
+                symbol: 'T',
+                isNPC: true,
+                disabled: false,
+                flipped: false,
+                get isSolid() { return !this.disabled; },
+                update(dt) {
+                    if (!this.disabled) {
+                        const target = window.Vitt;
+                        if (target && target.gridX === this.gridX && target.gridY === this.gridY) {
+                            damagePlayer(15, false);
+                            target.resetToSafePosition();
+                        }
+                    }
+                },
+                draw(ctx) {
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    if (this.disabled || this.flipped) {
+                        ctx.fillStyle = '#00ff66';
+                        ctx.font = "20px 'Courier Prime', monospace";
+                        ctx.fillText('t', this.x + 10, this.y + 10);
+                        
+                        ctx.font = "8px 'Courier Prime', monospace";
+                        ctx.fillStyle = 'rgba(0, 255, 102, 0.4)';
+                        ctx.fillText("DESACTIVADO", this.x + 10, this.y - 12);
+                    } else {
+                        const pulse = Math.sin(Date.now() / 100) > 0;
+                        const color = pulse ? '#ff0055' : '#ff8800';
+                        ctx.fillStyle = color;
+                        ctx.font = "bold 20px 'Courier Prime', monospace";
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = color;
+                        ctx.fillText('T', this.x + 10, this.y + 10);
+                        
+                        ctx.strokeStyle = 'rgba(255, 0, 85, 0.8)';
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.moveTo(this.x + 10, this.y);
+                        ctx.lineTo(this.x + 10, this.y + 20);
+                        ctx.stroke();
+                        
+                        ctx.font = "bold 8px 'Courier Prime', monospace";
+                        ctx.fillStyle = '#ff0055';
+                        ctx.fillText("BARRERA LÁSER", this.x + 10, this.y - 12);
+                    }
+                    ctx.restore();
+                }
+            };
+            window.activeEnemies.push(gate);
+            window.activeTraps = window.activeTraps || [];
+            window.activeTraps.push(gate);
+            return gate;
+        },
+
+        spawnMinorCorruption(x, y) {
+            const gridX = Math.round(x / 20);
+            const gridY = Math.round(y / 20);
+            const corruption = {
+                x: gridX * 20,
+                y: gridY * 20,
+                gridX, gridY,
+                width: 20,
+                height: 20,
+                integrity: 30,
+                maxIntegrity: 30,
+                type: 'tutorial_corruption',
+                symbol: 'x',
+                isNPC: false,
+                flashTimer: 0,
+                hitCooldown: 0,
+                hitBySlashes: [],
+                update(dt) {
+                    if (this.hitCooldown > 0) this.hitCooldown -= dt * 60;
+                    
+                    const target = window.Vitt;
+                    if (target) {
+                        const dx = target.x - this.x;
+                        const dy = target.y - this.y;
+                        if (dx*dx + dy*dy < 18*18) {
+                            damagePlayer(5, false);
+                            target.resetToSafePosition();
+                        }
+                    }
+                },
+                draw(ctx) {
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    let color = '#ff0055';
+                    if (this.flashTimer > 0) color = '#ffffff';
+                    ctx.fillStyle = color;
+                    ctx.font = "bold 20px 'Courier Prime', monospace";
+                    ctx.shadowBlur = 6;
+                    ctx.shadowColor = color;
+                    ctx.fillText('x', this.x + 10, this.y + 10);
+                    ctx.restore();
+                }
+            };
+            window.activeEnemies.push(corruption);
+            return corruption;
+        },
+
+        spawnTutorialPortal(x, y) {
+            const gridX = Math.round(x / 20);
+            const gridY = Math.round(y / 20);
+            const portal = {
+                x: gridX * 20,
+                y: gridY * 20,
+                gridX, gridY,
+                width: 20,
+                height: 20,
+                integrity: 999999,
+                maxIntegrity: 999999,
+                type: 'tutorial_portal',
+                symbol: '@',
+                isNPC: true,
+                update(dt) {
+                    const target = window.Vitt;
+                    if (target && target.gridX === this.gridX && target.gridY === this.gridY) {
+                        if (window.loadLevel) {
+                            window.loadLevel(1);
+                        }
+                    }
+                },
+                draw(ctx) {
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    const angle = (Date.now() / 200) % (Math.PI * 2);
+                    ctx.fillStyle = '#00f2fe';
+                    ctx.font = "bold 24px 'Courier Prime', monospace";
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = '#00f2fe';
+                    
+                    ctx.translate(this.x + 10, this.y + 10);
+                    ctx.rotate(angle);
+                    ctx.fillText('@', 0, 0);
+                    ctx.restore();
+                }
+            };
+            window.activeEnemies.push(portal);
+            return portal;
         }
     };
 })();

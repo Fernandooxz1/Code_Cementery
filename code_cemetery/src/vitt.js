@@ -76,15 +76,15 @@ window.Vitt = {
         
         this.facingDir = { x: 1, y: 0 };
         
-        this.gridX = 5;
-        this.gridY = 5;
+        this.gridX = (window.currentLevel === 1) ? 5 : 3;
+        this.gridY = (window.currentLevel === 1) ? 5 : 5;
         this.x = this.gridX * this.TILE_SIZE;
         this.y = this.gridY * this.TILE_SIZE;
         this.targetX = this.x;
         this.targetY = this.y;
         
-        this.lastSafeGridX = 5;
-        this.lastSafeGridY = 5;
+        this.lastSafeGridX = this.gridX;
+        this.lastSafeGridY = this.gridY;
         this.dodgeActive = false;
         
         this.parryTimer = 0;

@@ -66,6 +66,26 @@ window.GameAudio = {
         }
     },
 
+    playCodeBeep() {
+        const c = initContext();
+        if (!c) return;
+        const now = c.currentTime;
+        try {
+            const osc = c.createOscillator();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(800 + Math.random() * 600, now);
+            const gain = c.createGain();
+            gain.gain.setValueAtTime(0.015, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+            osc.connect(gain);
+            gain.connect(c.destination);
+            osc.start(now);
+            osc.stop(now + 0.03);
+        } catch (e) {
+            console.error(e);
+        }
+    },
+
     // Background Music (Hum drone)
     playBGM() {
         const c = initContext();
