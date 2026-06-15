@@ -645,6 +645,7 @@ window.Vitt = {
         let hitEnemy = false;
         if (window.activeEnemies) {
             window.activeEnemies.forEach(enemy => {
+                if (enemy.isNPC) return;
                 let ew = enemy.width || 20;
                 let eh = enemy.height || 20;
                 let enemyBox = { x: enemy.x, y: enemy.y, width: ew, height: eh };
@@ -738,7 +739,7 @@ window.Vitt = {
     
     parry() {
         if (this.isThrottled) return;
-        this.parryTimer = 4 / 60; // 4 frames parry window
+        this.parryTimer = 12 / 60; // 12 frames parry window
         this.isBlocking = true;
         this.showTextEffect("* BLOQUEADO *", "#00f2fe");
         if (window.GameAudio.playDash) window.GameAudio.playDash(); // clean block sound
@@ -1004,6 +1005,7 @@ window.Vitt = {
         let hitEnemy = false;
         if (window.activeEnemies) {
             window.activeEnemies.forEach(enemy => {
+                if (enemy.isNPC) return;
                 let ew = enemy.width || 20;
                 let eh = enemy.height || 20;
                 let ecx = enemy.x + ew/2;

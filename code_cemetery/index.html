@@ -409,7 +409,7 @@
                     { t: 4600, text: '', col: P.g },
                     { t: 4800, text: '   DAÑO PERMANENTE AL SILICIO EN:  ~8 MINUTOS', col: P.r, big: false },
                 ],
-                hold: 1800
+                hold: Infinity
             },
 
             // ─ Escena 1: Escaneo de memoria ──────────────────────────────
@@ -431,7 +431,7 @@
                     { t: 4600, text: '  ESTADO:         FUNCIONAL  ✓', col: P.g },
                     { t: 5100, text: '  Iniciando carga de contexto...', col: P.g },
                 ],
-                hold: 1500
+                hold: Infinity
             },
 
             // ─ Escena 2: Vitt despierta ───────────────────────────────────
@@ -455,7 +455,7 @@
                     { t: 7100, text: '  Si no llego... el silicio se derrite.', col: P.o },
                     { t: 7800, text: '  Y todo lo que existe aquí dentro desaparece.', col: P.r },
                 ],
-                hold: 2000
+                hold: Infinity
             },
 
             // ─ Escena 3: Briefing nivel 1 ────────────────────────────────
@@ -483,7 +483,7 @@
                     { t: 5500, text: '  ● Null Pointer (Ø)  — Dispara proyectiles de datos nulos', col: P.o },
                     { t: 5900, text: '  ★ GOLEM DEL CABEZAL — Jefe de zona. Usa los CARRILES.', col: P.r },
                 ],
-                hold: 1800
+                hold: Infinity
             },
 
             // ─ Escena 4: Controles y go ───────────────────────────────────
@@ -570,8 +570,24 @@
         }
 
         function onKey(e) {
-            if (!['Space', 'Enter', 'Escape'].includes(e.code)) return;
-            skipToLast();
+            if (e.code === 'Enter') {
+                if (pending.length > 0 || typeLine !== null) {
+                    // Flush typewriter: instantly draw all lines
+                    while (pending.length > 0) {
+                        const ld = pending.shift();
+                        drawnLines.push({ text: ld.text, col: ld.col || P.g, y: nextY(), blink: ld.blink || false, big: ld.big || false });
+                    }
+                    typeLine = null;
+                } else {
+                    if (sceneIdx < SCENES.length - 1) {
+                        loadScene(sceneIdx + 1);
+                    } else {
+                        endCinematic();
+                    }
+                }
+            } else if (e.code === 'Space' || e.code === 'Escape') {
+                skipToLast();
+            }
         }
 
         function onClick() {
@@ -631,21 +647,7 @@
                 }
             }
 
-            // Auto-advance scenes
-            if (!transitioning) {
-                const sc = SCENES[sceneIdx];
-                if (sc.hold !== Infinity && pending.length === 0 && typeLine === null) {
-                    const lastLineT = sc.lines[sc.lines.length - 1].t;
-                    const lastLen   = sc.lines[sc.lines.length - 1].text.length;
-                    const typeTime  = lastLen * 18;
-                    if (elapsed > lastLineT + typeTime + sc.hold) {
-                        transitioning = true;
-                        if (sceneIdx < SCENES.length - 1) {
-                            setTimeout(() => loadScene(sceneIdx + 1), 300);
-                        }
-                    }
-                }
-            }
+            // Auto-advance scenes disabled (Enter key manual progression)
 
             draw(ms);
             raf = requestAnimationFrame(loop);
@@ -773,11 +775,17 @@
             ctx2d.fillStyle = vig;
             ctx2d.fillRect(0, 0, W, H);
 
-            // -- BORDER GLOW --
-            ctx2d.globalAlpha = 0.12 * fadeAlpha;
-            ctx2d.strokeStyle = P.g;
-            ctx2d.lineWidth = 2;
-            ctx2d.strokeRect(1, 1, W - 2, H - 2);
+            // -- ENTER TO CONTINUE PROMPT --
+            if (pending.length === 0 && typeLine === null && sceneIdx < SCENES.length - 1) {
+                ctx2d.save();
+                ctx2d.font = "bold 11px 'Courier Prime', monospace";
+                ctx2d.fillStyle = P.y;
+                ctx2d.textAlign = 'right';
+                const curOn = Math.floor(ms / 350) % 2 === 0;
+                ctx2d.globalAlpha = curOn ? 0.8 : 0.3;
+                ctx2d.fillText('[ ENTER to continue... ]', W - MX, H - 35);
+                ctx2d.restore();
+            }
 
             ctx2d.globalAlpha = 1;
         }
@@ -906,7 +914,7 @@
                 ]);
 
                 // Segment 5: Stealth/Cifrado [U] check
-                window.Enemies.spawnTutorialGuide(420, 200, 'i', 'PT_Guia_Cifrado', [
+                window.Enemies.spawnTutorialGuide(480, 200, 'i', 'PT_Guia_Cifrado', [
                     "Guia de Cifrado: Delante hay una camara de seguridad que escanea el area.",
                     "Si te detecta, disparara rafagas letales de bytes.",
                     "Presiona [U] para activar el Cifrado. Te volveras invisible, pero drenara tu CPU por segundo.",

@@ -575,7 +575,7 @@
             } else if (proj.owner === 'player') {
                 // Reflected projectile hits enemies
                 window.activeEnemies.forEach(enemy => {
-                    if (enemy.integrity <= 0 || enemy.isNPC) return;
+                    if (enemy.integrity <= 0 || (enemy.isNPC && enemy.type !== 'tutorial_drone')) return;
                     const ex = enemy.x;
                     const ey = enemy.y;
                     const ew = enemy.width || 20;
@@ -2988,8 +2988,8 @@
                 gridX, gridY,
                 width: 20,
                 height: 20,
-                integrity: 999999,
-                maxIntegrity: 999999,
+                integrity: 1,
+                maxIntegrity: 1,
                 type: 'tutorial_drone',
                 symbol: 'D',
                 isNPC: true,
