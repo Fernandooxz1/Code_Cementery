@@ -396,10 +396,46 @@
     </div>
 
     <!-- SCRIPTS DEL JUEGO -->
-    <script src="src/audio.js"></script>
-    <script src="src/engine.js"></script>
-    <script src="src/vitt.js"></script>
-    <script src="src/enemies.js"></script>
+    <script>
+        // Default fallback configuration to ensure it is always defined
+        window.GameConfig = {
+            floatingText: {
+                playerDamageDealtColor: '#ffff33',
+                playerDamageTakenColor: '#ff0055',
+                parryColor: '#00f2fe',
+                blockColor: '#cbd5e0',
+                itemPickupColor: '#00f2fe',
+                font: 'bold 16px "Courier Prime", monospace',
+                duration: 50
+            },
+            enemySymbols: {
+                daemon: '𖥂',
+                leak: '~',
+                nullPointer: 'Ø',
+                drone: 'D',
+                guideNPC: '?',
+                interactiveNPC: 'i',
+                boss: 'B'
+            },
+            enemyColors: {
+                daemon: '#ff0055',
+                leak: '#00ff66',
+                nullPointer: '#00f2fe',
+                drone: '#00f2fe',
+                guideNPC: '#00f2fe',
+                interactiveNPC: '#00f2fe'
+            },
+            gameplay: {
+                baseSlashDamage: 15,
+                staggerMultiplier: 2.0
+            }
+        };
+    </script>
+    <script src="src/config.js?v=1.0.2"></script>
+    <script src="src/audio.js?v=1.0.2"></script>
+    <script src="src/engine.js?v=1.0.2"></script>
+    <script src="src/vitt.js?v=1.0.2"></script>
+    <script src="src/enemies.js?v=1.0.2"></script>
 
     <script>
     // ╔══════════════════════════════════════════════════════════════════╗
@@ -515,9 +551,9 @@
                     { t: 3750, text: '  ◌  Reconstruir el B7t3 ¨*SA%$* para desbloquear el portal', col: P.dim },
                     { t: 4200, text: '', col: P.g },
                     { t: 4400, text: '  AMENAZAS DETECTADAS:', col: P.r },
-                    { t: 4800, text: '  ● Daemon Thread (&)  — Agresivo, ataca en cadena', col: P.o },
-                    { t: 5150, text: '  ● Memory Leak (~)   — Deja ^?=#^?=#^?=# al moverse', col: P.o },
-                    { t: 5500, text: '  ● Null Pointer (Ø)  — Dispara ~*?^?=#  ¬^?=#~*?¬', col: P.o },
+                    { t: 4800, get text() { return `  ● Daemon Thread (${window.GameConfig?.enemySymbols?.daemon || '&'})  — Agresivo, ataca en cadena`; }, col: P.o },
+                    { t: 5150, get text() { return `  ● Memory Leak (${window.GameConfig?.enemySymbols?.leak || '~'})   — Deja ^?=#^?=#^?=# al moverse`; }, col: P.o },
+                    { t: 5500, get text() { return `  ● Null Pointer (${window.GameConfig?.enemySymbols?.nullPointer || 'Ø'})  — Dispara ~*?^?=#  ¬^?=#~*?¬`; }, col: P.o },
                     { t: 5900, text: '  ★ GOLEM DEL CABEZAL — Jefe de zona. Usa los CARRILES.', col: P.r },
                 ],
                 hold: Infinity
@@ -984,9 +1020,9 @@
                     window.flashAlert(window.Vitt.godMode ? 'MODO DIOS: ACTIVO' : 'MODO DIOS: INACTIVO',
                                       window.Vitt.godMode ? 'cyan' : 'red');
                 }
-                if (key === '1') { window.Enemies.spawnDaemon(150 + Math.random()*500, 100 + Math.random()*400); window.flashAlert('Invocado: Daemon (&)', 'cyan'); }
-                if (key === '2') { window.Enemies.spawnLeak(150 + Math.random()*500, 100 + Math.random()*400);   window.flashAlert('Invocado: Memory Leak (~)', 'cyan'); }
-                if (key === '3') { window.Enemies.spawnNullPointer(150 + Math.random()*500, 100 + Math.random()*400); window.flashAlert('Invocado: Null Pointer (Ø)', 'cyan'); }
+                if (key === '1') { window.Enemies.spawnDaemon(150 + Math.random()*500, 100 + Math.random()*400); window.flashAlert(`Invocado: Daemon (${window.GameConfig?.enemySymbols?.daemon || '&'})`, 'cyan'); }
+                if (key === '2') { window.Enemies.spawnLeak(150 + Math.random()*500, 100 + Math.random()*400);   window.flashAlert(`Invocado: Memory Leak (${window.GameConfig?.enemySymbols?.leak || '~'})`, 'cyan'); }
+                if (key === '3') { window.Enemies.spawnNullPointer(150 + Math.random()*500, 100 + Math.random()*400); window.flashAlert(`Invocado: Null Pointer (${window.GameConfig?.enemySymbols?.nullPointer || 'Ø'})`, 'cyan'); }
                 if (key === '4') { window.Enemies.spawnSpindleGolem(650, 290); window.flashAlert('Invocado: Golem del Cabezal [SPINDLE]', 'red'); }
             });
 

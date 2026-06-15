@@ -704,7 +704,7 @@ window.Vitt = {
                     slashBox.y < enemyBox.y + enemyBox.height &&
                     slashBox.y + slashBox.height > enemyBox.y) {
                     
-                    enemy.integrity = (enemy.integrity || 0) - 20;
+                    enemy.integrity = (enemy.integrity || 0) - (window.GameConfig?.gameplay?.baseSlashDamage || 20);
                     enemy.staggered = true;
                     enemy.staggerTimer = 0.5;
                     enemy.x = Math.max(0, Math.min(800 - ew, enemy.x + fx * 15));

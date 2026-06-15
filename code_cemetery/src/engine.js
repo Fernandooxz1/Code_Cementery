@@ -75,19 +75,20 @@ class VirtualContext {
                 this.engine.dynamicCtx.fillText(text, x, y);
             }
         } else {
+            const chars = [...text];
             let col = Math.round(x / 10);
             const row = Math.round(y / 20);
             
             if (this._textAlign === 'right') {
-                col -= text.length;
+                col -= chars.length;
             } else if (this._textAlign === 'center') {
-                col -= Math.round(text.length / 2);
+                col -= Math.round(chars.length / 2);
             }
             
-            for (let i = 0; i < text.length; i++) {
+            for (let i = 0; i < chars.length; i++) {
                 const c = col + i;
                 if (c >= 0 && c < 80 && row >= 0 && row < 30) {
-                    this.engine.setGridCell(c, row, text[i], this._fillStyle);
+                    this.engine.setGridCell(c, row, chars[i], this._fillStyle);
                 }
             }
         }

@@ -12,6 +12,20 @@
     window.activeEnemies = window.activeEnemies || [];
     window.activeCollectibles = window.activeCollectibles || [];
 
+    // Helper to convert hex colors (e.g. '#00ff66') to rgba strings for transparency
+    function hexToRgba(hex, alpha) {
+        if (!hex) return `rgba(0, 255, 102, ${alpha})`;
+        if (hex.startsWith('rgb')) return hex;
+        let c = hex.replace('#', '');
+        if (c.length === 3) {
+            c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+        }
+        const r = parseInt(c.substring(0, 2), 16);
+        const g = parseInt(c.substring(2, 4), 16);
+        const b = parseInt(c.substring(4, 6), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
     // Dialogue State
     let currentDialogue = null;
     
@@ -47,11 +61,12 @@
     }
 
     // Spawn a damage or status text popup (All in Spanish)
-    function spawnText(x, y, text, color, duration = 45) {
+    function spawnText(x, y, text, color, duration) {
+        const dur = duration || window.GameConfig?.floatingText?.duration || 45;
         floatingTexts.push({
             x, y, text, color,
-            duration,
-            maxDuration: duration
+            duration: dur,
+            maxDuration: dur
         });
     }
 
@@ -68,7 +83,7 @@
     function drawFloatingTexts(ctx) {
         floatingTexts.forEach(ft => {
             ctx.save();
-            ctx.font = "bold 13px 'Courier Prime', monospace";
+            ctx.font = window.GameConfig?.floatingText?.font || "bold 13px 'Courier Prime', monospace";
             ctx.fillStyle = ft.color;
             ctx.textAlign = 'center';
             ctx.globalAlpha = ft.duration / ft.maxDuration;
@@ -160,7 +175,7 @@
                 }
             }
             
-            spawnText(target.x, target.y - 35, "* PARRADO *", "#00f2fe", 45);
+            spawnText(target.x, target.y - 35, "* PARRADO *", window.GameConfig?.floatingText?.parryColor || "#00f2fe");
             return;
         }
         
@@ -180,7 +195,7 @@
                 if (window.GameEngine && typeof window.GameEngine.shake === 'function') {
                     window.GameEngine.shake(3);
                 }
-                spawnText(target.x, target.y - 35, "* BLOQUEADO *", "#cbd5e0", 45);
+                spawnText(target.x, target.y - 35, "* BLOQUEADO *", window.GameConfig?.floatingText?.blockColor || "#cbd5e0");
             }
         }
         
@@ -205,7 +220,7 @@
             }
         }
         
-        spawnText(target.x, target.y - 20, `-${Math.round(amount)} INTEGRIDAD`, '#ff0055', 50);
+        spawnText(target.x, target.y - 20, `-${Math.round(amount)} INTEGRIDAD`, window.GameConfig?.floatingText?.playerDamageTakenColor || '#ff0055');
         
         // Check death
         const checkHealth = target.integrity !== undefined ? target.integrity : target.health;
@@ -313,8 +328,8 @@
                 
                 if (hit) {
                     enemy.hitBySlashes.push(slash.id);
-                    takeDamage(enemy, slash.damage || 15);
-                    spawnText(enemy.x, enemy.y - 20, `-${Math.round(slash.damage || 15)}`, '#00ff66');
+                    takeDamage(enemy, slash.damage || window.GameConfig?.gameplay?.baseSlashDamage || 15);
+                    spawnText(enemy.x, enemy.y - 20, `-${Math.round(slash.damage || window.GameConfig?.gameplay?.baseSlashDamage || 15)}`, window.GameConfig?.floatingText?.playerDamageDealtColor || '#00ff66');
                 }
             });
         });
@@ -597,7 +612,9 @@
                     );
                     
                     if (collides) {
-                        takeDamage(enemy, proj.damage * 1.6);
+                        const finalDmg = proj.damage * 1.6;
+                        takeDamage(enemy, finalDmg);
+                        spawnText(enemy.x, enemy.y - 20, `-${Math.round(finalDmg)}`, window.GameConfig?.floatingText?.playerDamageDealtColor || '#00ff66');
                         proj.lifetime = 0;
                     }
                 });
@@ -999,7 +1016,7 @@
             jy = (Math.random() - 0.5) * 4;
         }
         
-        ctx.fillText('&', this.x + 10 + jx, this.y + 10 + jy);
+        ctx.fillText(this.symbol || window.GameConfig?.enemySymbols?.corruptedBitt || window.GameConfig?.enemySymbols?.daemon || '&', this.x + 10 + jx, this.y + 10 + jy);
         ctx.restore();
     }
 
@@ -1864,7 +1881,7 @@
         ctx.font = "bold 20px 'Courier Prime', monospace";
         ctx.textAlign = 'center';
         
-        let color = '#ff0055';
+        let color = window.GameConfig?.enemyColors?.daemon || '#ff0055';
         if (this.state === 'stunned') color = '#ffff66';
         else if (this.state === 'windup') color = '#ffcc00';
         else if (this.state === 'strike1' || this.state === 'strike2') color = '#00f2fe';
@@ -1880,19 +1897,19 @@
             jx = (Math.random() - 0.5) * 4;
             jy = (Math.random() - 0.5) * 4;
             
-            ctx.fillStyle = '#ff0055';
+            ctx.fillStyle = window.GameConfig?.enemyColors?.daemon || '#ff0055';
             ctx.font = "bold 13px 'Courier Prime', monospace";
             ctx.fillText('!', this.x, this.y - 16);
             ctx.fillStyle = color;
             ctx.font = "bold 20px 'Courier Prime', monospace";
         }
         
-        ctx.fillText('&', this.x + jx, this.y + jy);
+        ctx.fillText(this.symbol || window.GameConfig?.enemySymbols?.daemon || '&', this.x + jx, this.y + jy);
         
         if (this.state === 'strike1' || this.state === 'strike2') {
             ctx.fillStyle = 'rgba(0, 242, 254, 0.3)';
-            ctx.fillText('&', this.x - this.strikeDir.x * 16, this.y - this.strikeDir.y * 16);
-            ctx.fillText('&', this.x - this.strikeDir.x * 32, this.y - this.strikeDir.y * 32);
+            ctx.fillText(this.symbol || window.GameConfig?.enemySymbols?.daemon || '&', this.x - this.strikeDir.x * 16, this.y - this.strikeDir.y * 16);
+            ctx.fillText(this.symbol || window.GameConfig?.enemySymbols?.daemon || '&', this.x - this.strikeDir.x * 32, this.y - this.strikeDir.y * 32);
             
             ctx.fillStyle = '#00f2fe';
             ctx.fillText('<<', this.x + this.strikeDir.x * 22, this.y + this.strikeDir.y * 22);
@@ -1904,8 +1921,9 @@
     function drawLeak(ctx) {
         ctx.save();
         
-        ctx.fillStyle = 'rgba(0, 255, 102, 0.14)';
-        ctx.strokeStyle = 'rgba(0, 255, 102, 0.25)';
+        const baseColor = window.GameConfig?.enemyColors?.leak || '#00ff66';
+        ctx.fillStyle = hexToRgba(baseColor, 0.14);
+        ctx.strokeStyle = hexToRgba(baseColor, 0.25);
         ctx.lineWidth = 1;
         this.slimeTrail.forEach(slime => {
             ctx.beginPath();
@@ -1913,25 +1931,25 @@
             ctx.fill();
             ctx.stroke();
             
-            ctx.fillStyle = 'rgba(0, 255, 102, 0.4)';
+            ctx.fillStyle = hexToRgba(baseColor, 0.4);
             ctx.font = "9px 'Courier Prime', monospace";
             ctx.fillText('.', slime.x - 4, slime.y + 1);
             ctx.fillText('*', slime.x + 4, slime.y - 2);
-            ctx.fillStyle = 'rgba(0, 255, 102, 0.14)';
+            ctx.fillStyle = hexToRgba(baseColor, 0.14);
         });
         
         if (this.state === 'project_charge') {
-            ctx.strokeStyle = 'rgba(0, 255, 102, 0.45)';
+            ctx.strokeStyle = hexToRgba(baseColor, 0.45);
             ctx.lineWidth = 1.5;
             ctx.setLineDash([4, 6]);
             ctx.beginPath(); ctx.moveTo(this.x, 0); ctx.lineTo(this.x, 600); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0, this.y); ctx.lineTo(800, this.y); ctx.stroke();
         } else if (this.state === 'project_spill') {
-            ctx.fillStyle = 'rgba(0, 255, 102, 0.35)';
-            ctx.strokeStyle = 'rgba(0, 255, 102, 0.75)';
+            ctx.fillStyle = hexToRgba(baseColor, 0.35);
+            ctx.strokeStyle = hexToRgba(baseColor, 0.75);
             ctx.lineWidth = 2;
             ctx.shadowBlur = 12;
-            ctx.shadowColor = '#00ff66';
+            ctx.shadowColor = baseColor;
             
             ctx.fillRect(this.x - 12, 0, 24, 600);
             ctx.strokeRect(this.x - 12, 0, 24, 600);
@@ -1941,18 +1959,18 @@
             ctx.fillStyle = '#ffffff';
             ctx.font = "bold 13px 'Courier Prime', monospace";
             for (let i = 0; i < 4; i++) {
-                ctx.fillText('~', this.x + (Math.random()-0.5)*18, Math.random()*600);
-                ctx.fillText('~', Math.random()*800, this.y + (Math.random()-0.5)*18);
+                ctx.fillText(this.symbol || '~', this.x + (Math.random()-0.5)*18, Math.random()*600);
+                ctx.fillText(this.symbol || '~', Math.random()*800, this.y + (Math.random()-0.5)*18);
             }
         }
         
         ctx.font = "bold 24px 'Courier Prime', monospace";
         ctx.textAlign = 'center';
         
-        let color = '#00ff66';
+        let color = baseColor;
         if (this.state === 'stunned') color = '#ffff66';
         else if (this.state === 'project_charge') {
-            color = Math.floor(Date.now() / 150) % 2 === 0 ? '#ffcc00' : '#00ff66';
+            color = Math.floor(Date.now() / 150) % 2 === 0 ? '#ffcc00' : baseColor;
             
             ctx.fillStyle = '#ffcc00';
             ctx.font = "bold 13px 'Courier Prime', monospace";
@@ -1965,7 +1983,7 @@
         ctx.fillStyle = color;
         ctx.shadowBlur = 12;
         ctx.shadowColor = color;
-        ctx.fillText('~', this.x, this.y);
+        ctx.fillText(this.symbol || '~', this.x, this.y);
         ctx.restore();
     }
 
@@ -1973,8 +1991,9 @@
     function drawNullPointer(ctx) {
         ctx.save();
         
+        const baseColor = window.GameConfig?.enemyColors?.nullPointer || '#00f2fe';
         if (this.state === 'scan' || this.state === 'cooldown') {
-            ctx.strokeStyle = 'rgba(0, 242, 254, 0.2)';
+            ctx.strokeStyle = hexToRgba(baseColor, 0.2);
             ctx.lineWidth = 1;
             ctx.setLineDash([4, 8]);
             ctx.beginPath(); ctx.moveTo(0, this.y); ctx.lineTo(800, this.y); ctx.stroke();
@@ -1994,7 +2013,7 @@
         ctx.font = "bold 22px 'Courier Prime', monospace";
         ctx.textAlign = 'center';
         
-        let color = '#00f2fe';
+        let color = baseColor;
         if (this.state === 'stunned') color = '#ffff66';
         else if (this.state === 'alert') {
             color = Math.floor(Date.now() / 100) % 2 === 0 ? '#ffffff' : '#ff0055';
@@ -2017,7 +2036,7 @@
             jy = (Math.random() - 0.5) * 4;
         }
         
-        ctx.fillText('Ø', this.x + jx, this.y + jy);
+        ctx.fillText(this.symbol || 'Ø', this.x + jx, this.y + jy);
         ctx.restore();
     }
 
@@ -2676,7 +2695,7 @@
                 maxIntegrity: 45,
                 speed: 3.8,
                 type: 'daemon',
-                symbol: '&',
+                symbol: window.GameConfig?.enemySymbols?.daemon || '&',
                 state: 'chase',
                 stateTimer: 0,
                 stunTimer: 0,
@@ -2704,7 +2723,7 @@
                 maxIntegrity: 120,
                 speed: 0.9,
                 type: 'leak',
-                symbol: '~',
+                symbol: window.GameConfig?.enemySymbols?.leak || '~',
                 state: 'normal',
                 stateTimer: 0,
                 stunTimer: 0,
@@ -2733,7 +2752,7 @@
                 integrity: 60,
                 maxIntegrity: 60,
                 type: 'sentinel',
-                symbol: 'Ø',
+                symbol: window.GameConfig?.enemySymbols?.nullPointer || 'Ø',
                 state: 'scan',
                 stateTimer: 0,
                 stunTimer: 0,
@@ -2761,7 +2780,7 @@
                 maxIntegrity: 1000,
                 speed: 0.55,
                 type: 'boss',
-                symbol: 'OOM',
+                symbol: window.GameConfig?.enemySymbols?.boss || 'OOM',
                 state: 'drift',
                 stateTimer: 180,
                 stunTimer: 0,
@@ -2956,6 +2975,12 @@
         spawnTutorialGuide(x, y, symbol, title, lines) {
             const gridX = Math.round(x / 20);
             const gridY = Math.round(y / 20);
+            
+            let finalSymbol = symbol;
+            if (symbol === '?') finalSymbol = window.GameConfig?.enemySymbols?.guideNPC || '?';
+            else if (symbol === 'i') finalSymbol = window.GameConfig?.enemySymbols?.interactiveNPC || 'i';
+            else if (!symbol) finalSymbol = window.GameConfig?.enemySymbols?.guideNPC || '?';
+            
             const guide = {
                 x: gridX * 20,
                 y: gridY * 20,
@@ -2965,7 +2990,7 @@
                 integrity: 999999,
                 maxIntegrity: 999999,
                 type: 'tutorial_guide',
-                symbol: symbol || '?',
+                symbol: finalSymbol,
                 title: title || 'Guia',
                 lines: lines || [],
                 isNPC: true,
@@ -3125,7 +3150,7 @@
                 integrity: 1,
                 maxIntegrity: 1,
                 type: 'tutorial_drone',
-                symbol: 'D',
+                symbol: window.GameConfig?.enemySymbols?.drone || 'D',
                 isNPC: true,
                 shootTimer: shootInterval,
                 shootInterval: shootInterval,
@@ -3154,11 +3179,12 @@
                     ctx.save();
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillStyle = '#00f2fe';
+                    const color = window.GameConfig?.enemyColors?.drone || '#00f2fe';
+                    ctx.fillStyle = color;
                     ctx.font = "bold 20px 'Courier Prime', monospace";
                     ctx.shadowBlur = 8;
-                    ctx.shadowColor = '#00f2fe';
-                    ctx.fillText('D', this.x + 10, this.y + 10);
+                    ctx.shadowColor = color;
+                    ctx.fillText(this.symbol || 'D', this.x + 10, this.y + 10);
                     
                     ctx.font = "8px 'Courier Prime', monospace";
                     ctx.fillStyle = '#cbd5e0';
@@ -3437,7 +3463,7 @@
                 maxIntegrity: 40,
                 speed: 2.2,
                 type: 'corrupted_bitt',
-                symbol: '&',
+                symbol: window.GameConfig?.enemySymbols?.corruptedBitt || window.GameConfig?.enemySymbols?.daemon || '&',
                 flashTimer: 0,
                 hitCooldown: 0,
                 twitchTimer: 0,
