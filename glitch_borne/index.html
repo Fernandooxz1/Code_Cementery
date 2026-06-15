@@ -1,0 +1,2535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLITCH-BORNE // Shadow-Survival Rogue-lite</title>
+    <style>
+        /* Modern reset and typography */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020205;
+            font-family: 'Courier New', Courier, monospace;
+            color: #d1d1f0;
+        }
+
+        /* Ambient scanlines overlay to simulate CRT monitors */
+        .crt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.04));
+            background-size: 100% 4px, 6px 100%;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0.95;
+        }
+
+        /* Deep vignette shadow for scary tunnel vision */
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 30%, rgba(0, 0, 0, 0.9) 100%);
+            z-index: 99;
+            pointer-events: none;
+        }
+
+        /* Grid scanline flicker animation */
+        @keyframes crt-flicker {
+            0% { opacity: 0.93; }
+            50% { opacity: 0.98; }
+            100% { opacity: 0.93; }
+        }
+
+        /* Main Game Canvas container */
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Neon panels and titles */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(3, 3, 8, 0.92);
+            backdrop-filter: blur(8px);
+            z-index: 50;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .hidden {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+
+        .glass-panel {
+            background: rgba(10, 10, 22, 0.85);
+            border: 2px solid #00f0ff;
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.15), inset 0 0 15px rgba(0, 240, 255, 0.05);
+            padding: 40px;
+            border-radius: 6px;
+            max-width: 650px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            animation: panel-pulse 4s infinite alternate;
+        }
+
+        @keyframes panel-pulse {
+            0% { border-color: #00f0ff; box-shadow: 0 0 20px rgba(0, 240, 255, 0.15); }
+            50% { border-color: #9d00ff; box-shadow: 0 0 25px rgba(157, 0, 255, 0.2); }
+            100% { border-color: #ff2a5f; box-shadow: 0 0 20px rgba(255, 42, 95, 0.15); }
+        }
+
+        h1.title {
+            font-size: 3rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            margin-bottom: 25px;
+            color: #ffffff;
+            text-shadow: 0 0 10px #00f0ff, 0 0 20px #ff2a5f;
+            animation: text-glitch-cycle 4s infinite;
+        }
+
+        @keyframes text-glitch-cycle {
+            0%, 94%, 96%, 100% { text-shadow: 0 0 10px #00f0ff, 0 0 20px #ff2a5f; transform: skewX(0deg); }
+            95% { text-shadow: -3px 0 0 #ff2a5f, 3px 0 0 #00f0ff; transform: skewX(10deg); }
+            97% { text-shadow: 3px 0 0 #ff2a5f, -3px 0 0 #00f0ff; transform: skewX(-15deg); }
+        }
+
+        .lore-box {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin: 20px 0;
+            text-align: justify;
+            color: #a0a0df;
+            border-left: 3px solid #ff2a5f;
+            padding-left: 15px;
+            background: rgba(255, 42, 95, 0.02);
+        }
+
+        .controls-list {
+            margin: 25px 0;
+            text-align: left;
+            font-size: 0.85rem;
+            display: inline-block;
+            color: #a0a0df;
+        }
+
+        .controls-list li {
+            list-style: none;
+            margin-bottom: 10px;
+        }
+
+        .key {
+            background: #101026;
+            border: 1px solid #00f0ff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: #00f0ff;
+            font-weight: bold;
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+        }
+
+        .btn {
+            background: transparent;
+            border: 2px solid #00f0ff;
+            color: #00f0ff;
+            font-family: inherit;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 12px 32px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .btn:hover {
+            background: #00f0ff;
+            color: #020205;
+            box-shadow: 0 0 25px #00f0ff;
+            text-shadow: none;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Top HUD overlay */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .hud-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 300px;
+        }
+
+        .bar-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(5, 5, 12, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 8px 14px;
+            border-radius: 4px;
+            backdrop-filter: blur(4px);
+        }
+
+        .bar-label {
+            width: 75px;
+            font-weight: bold;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ffffff;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        .bar-outer {
+            flex-grow: 1;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-inner {
+            height: 100%;
+            width: 100%;
+            transition: width 0.15s ease-out;
+            border-radius: 5px;
+        }
+
+        .hp-bar {
+            background: linear-gradient(90deg, #ff2a5f, #ff6b8b);
+            box-shadow: 0 0 10px rgba(255, 42, 95, 0.6);
+        }
+
+        .battery-bar {
+            background: linear-gradient(90deg, #00f0ff, #70f5ff);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+        }
+
+        .xp-bar {
+            background: linear-gradient(90deg, #39ff14, #8eff70);
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.6);
+        }
+
+        .hud-stats {
+            text-align: right;
+            background: rgba(5, 5, 12, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px 20px;
+            border-radius: 4px;
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.85rem;
+            min-width: 200px;
+        }
+
+        .stat-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .stat-label {
+            color: #8888aa;
+        }
+
+        .stat-val {
+            color: #00f0ff;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+        }
+
+        .val-danger {
+            color: #ff2a5f !important;
+            text-shadow: 0 0 8px rgba(255, 42, 95, 0.4) !important;
+            animation: text-pulse 1s infinite alternate;
+        }
+
+        @keyframes text-pulse {
+            0% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        /* Level-Up Modal Overlay */
+        .upgrade-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 2, 6, 0.92);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 60;
+            transition: opacity 0.3s ease;
+        }
+
+        .upgrade-title {
+            font-size: 2.2rem;
+            color: #39ff14;
+            text-shadow: 0 0 12px rgba(57, 255, 20, 0.4);
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-align: center;
+        }
+
+        .cards-container {
+            display: flex;
+            gap: 20px;
+            max-width: 960px;
+            width: 90%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .upgrade-card {
+            flex: 1;
+            min-width: 260px;
+            max-width: 300px;
+            background: rgba(12, 12, 28, 0.85);
+            border: 2px solid rgba(57, 255, 20, 0.3);
+            border-radius: 6px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+        }
+
+        .upgrade-card:hover {
+            transform: translateY(-8px) scale(1.03);
+            border-color: #39ff14;
+            box-shadow: 0 0 25px rgba(57, 255, 20, 0.25);
+            background: rgba(18, 18, 40, 0.98);
+        }
+
+        .upgrade-icon {
+            font-size: 2.5rem;
+            color: #39ff14;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
+        }
+
+        .upgrade-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+        }
+
+        .upgrade-desc {
+            font-size: 0.8rem;
+            color: #a0a0df;
+            line-height: 1.5;
+        }
+
+        /* Active Upgrades tags list */
+        #active-upgrades {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 8px;
+            z-index: 20;
+            max-width: 60%;
+            flex-wrap: wrap;
+            pointer-events: none;
+        }
+
+        .upgrade-tag {
+            background: rgba(57, 255, 20, 0.08);
+            border: 1px solid rgba(57, 255, 20, 0.6);
+            color: #39ff14;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 5px rgba(57, 255, 20, 0.3);
+            animation: tag-flicker 3s infinite alternate;
+        }
+
+        @keyframes tag-flicker {
+            0%, 95%, 100% { opacity: 1; }
+            97% { opacity: 0.7; }
+        }
+
+        /* Quick helper controls bar */
+        .hotkeys-helper {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(5, 5, 12, 0.7);
+            padding: 8px 14px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            gap: 15px;
+            color: #777799;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        /* Fullscreen red warning flash for bounds */
+        #glitch-border-warning {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0px solid transparent;
+            box-shadow: inset 0 0 0px #ff2a5f;
+            z-index: 98;
+            pointer-events: none;
+            transition: box-shadow 0.2s ease;
+        }
+
+        .glitch-border-flash {
+            animation: border-flash-anim 0.25s infinite alternate;
+        }
+
+        @keyframes border-flash-anim {
+            0% { box-shadow: inset 0 0 25px rgba(255, 42, 95, 0.5); }
+            100% { box-shadow: inset 0 0 50px rgba(255, 42, 95, 0.8); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="crt-overlay"></div>
+    <div class="vignette"></div>
+    <div id="glitch-border-warning"></div>
+
+    <div id="game-container">
+        <!-- Main Game Canvas -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Dynamic Game HUD -->
+        <div id="hud">
+            <div class="hud-group">
+                <!-- HP Bar -->
+                <div class="bar-container">
+                    <div class="bar-label">SYSTEM HP</div>
+                    <div class="bar-outer">
+                        <div id="hp-fill" class="bar-inner hp-bar" style="width: 100%;"></div>
+                    </div>
+                </div>
+                <!-- Battery Bar -->
+                <div class="bar-container">
+                    <div class="bar-label" id="battery-label">BATTERY</div>
+                    <div class="bar-outer">
+                        <div id="battery-fill" class="bar-inner battery-bar" style="width: 100%;"></div>
+                    </div>
+                </div>
+                <!-- XP Bar -->
+                <div class="bar-container">
+                    <div class="bar-label">XP LINK</div>
+                    <div class="bar-outer">
+                        <div id="xp-fill" class="bar-inner xp-bar" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Tracker -->
+            <div class="hud-stats">
+                <div class="stat-line">
+                    <span class="stat-label">CORRUPTION WAVE:</span>
+                    <span class="stat-val" id="hud-wave">1</span>
+                </div>
+                <div class="stat-line">
+                    <span class="stat-label">CLEANSED GLITCHES:</span>
+                    <span class="stat-val" id="hud-score">0</span>
+                </div>
+                <div class="stat-line">
+                    <span class="stat-label">UPLINK TIME:</span>
+                    <span class="stat-val" id="hud-timer">00:00</span>
+                </div>
+                <div class="stat-line">
+                    <span class="stat-label">LINK INTEGRITY:</span>
+                    <span class="stat-val" id="hud-level">LVL 1</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen interactive">
+            <div class="glass-panel">
+                <h1 class="title">GLITCH-BORNE</h1>
+                <div class="lore-box">
+                    SYSTEM STATUS: ISOLATED. A critical error has corrupted the local grid.
+                    Unchecked glitching entities lurk in the dark sector. 
+                    You are the core light beacon—the only process resisting the system wipe.
+                    PROJECT your dynamic flashlight beam to burn anomalies and dissolve their scripts.
+                    Beware: In the shadows, they regenerate rapidly and pursue with hostile speed.
+                    COLLECT battery cells to sustain your light, gather core data fragments to level up, and upgrade your defenses.
+                    Do not let the darkness reclaim the core.
+                </div>
+                <ul class="controls-list">
+                    <li><span class="key">W, A, S, D</span> or <span class="key">↑, ↓, ←, →</span> : Move Light Source</li>
+                    <li><span class="key">Mouse Position</span> : Aim Flashlight Cone</li>
+                    <li><span class="key">Shift</span> : Light Dash (Dash, Invulnerability)</li>
+                    <li><span class="key">Space / Right-Click</span> : Solar Shockwave Flare (Costs Battery)</li>
+                </ul>
+                <div>
+                    <button class="btn" id="start-btn">INITIALIZE SYSTEM</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Level-Up Upgrades Screen -->
+        <div id="upgrade-screen" class="upgrade-overlay hidden">
+            <h2 class="upgrade-title">// ARCHITECTURE UPGRADE DETECTED //</h2>
+            <div class="cards-container" id="cards-container">
+                <!-- Cards injected by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="screen hidden interactive">
+            <div class="glass-panel" style="border-color: #ff2a5f; box-shadow: 0 0 25px rgba(255, 42, 95, 0.25);">
+                <h1 class="title" style="text-shadow: 0 0 10px #ff2a5f, 0 0 20px #9d00ff;">SYSTEM PURGED</h1>
+                <div class="lore-box" style="border-color: #00f0ff; background: rgba(0, 240, 255, 0.02); text-align: center;">
+                    Your light beacon has collapsed. The sector has been fully corrupted.
+                    <br><br>
+                    <span style="color: #ffffff;">FINAL CORRUPTION LEVEL:</span> <span class="stat-val" id="end-wave" style="color: #ff2a5f;">1</span><br>
+                    <span style="color: #ffffff;">ANOMALIES CLEANSED:</span> <span class="stat-val" id="end-score">0</span><br>
+                    <span style="color: #ffffff;">STABILIZATION TIME:</span> <span class="stat-val" id="end-time">00:00</span>
+                </div>
+                <div>
+                    <button class="btn" id="restart-btn" style="border-color: #ff2a5f; color: #ff2a5f; box-shadow: 0 0 15px rgba(255, 42, 95, 0.1);">REBOOT SYSTEM</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Upgrades HUD tags -->
+        <div id="active-upgrades"></div>
+
+        <!-- Hotkeys Helper HUD -->
+        <div class="hotkeys-helper">
+            <span>[SHIFT] Dash</span>
+            <span>[SPACE / Right-Click] Flare</span>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // SYNTHESIZED AUDIO MANAGER (WEB AUDIO API)
+        // ==========================================
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (this.ctx) return;
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    this.ctx = new AudioContextClass();
+                }
+            }
+
+            playClick() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(120, now + 0.1);
+                
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                
+                osc.start(now);
+                osc.stop(now + 0.1);
+            }
+
+            playHurt() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(140, now);
+                osc.frequency.linearRampToValueAtTime(30, now + 0.25);
+                
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+
+            playBattery() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.setValueAtTime(480, now + 0.08);
+                osc.frequency.setValueAtTime(640, now + 0.16);
+                osc.frequency.setValueAtTime(960, now + 0.24);
+                
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.setValueAtTime(0.18, now + 0.24);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+                
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+
+            playLevelUp() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const freqs = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+                freqs.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+                    
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(0.12, now + idx * 0.05 + 0.01);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.22);
+                    
+                    osc.start(now + idx * 0.05);
+                    osc.stop(now + idx * 0.05 + 0.22);
+                });
+            }
+
+            playFlare() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(650, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.6);
+                
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                
+                osc.start(now);
+                osc.stop(now + 0.6);
+
+                // Add filtered white noise burst for explosive texture
+                try {
+                    const bufferSize = this.ctx.sampleRate * 0.5;
+                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+                    const noise = this.ctx.createBufferSource();
+                    noise.buffer = buffer;
+                    
+                    const noiseFilter = this.ctx.createBiquadFilter();
+                    noiseFilter.type = 'bandpass';
+                    noiseFilter.frequency.setValueAtTime(1200, now);
+                    noiseFilter.frequency.exponentialRampToValueAtTime(150, now + 0.5);
+                    
+                    const noiseGain = this.ctx.createGain();
+                    noiseGain.gain.setValueAtTime(0.2, now);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                    
+                    noise.connect(noiseFilter);
+                    noiseFilter.connect(noiseGain);
+                    noiseGain.connect(this.ctx.destination);
+                    
+                    noise.start(now);
+                    noise.stop(now + 0.5);
+                } catch(e) {}
+            }
+
+            playBurn() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                // Fast static frequencies simulating sizzle
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(Math.random() * 900 + 400, now);
+                
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                
+                osc.start(now);
+                osc.stop(now + 0.04);
+            }
+
+            playEnemyDie() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.setValueAtTime(80, now + 0.05);
+                osc.frequency.setValueAtTime(450, now + 0.1);
+                
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                
+                osc.start(now);
+                osc.stop(now + 0.18);
+            }
+
+            playUpgradeSelected() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc1 = this.ctx.createOscillator();
+                const osc2 = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc1.connect(gain);
+                osc2.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(440, now);
+                osc1.frequency.exponentialRampToValueAtTime(880, now + 0.25);
+                
+                osc2.type = 'triangle';
+                osc2.frequency.setValueAtTime(554.37, now);
+                osc2.frequency.exponentialRampToValueAtTime(1108.73, now + 0.25);
+                
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                
+                osc1.start(now);
+                osc2.start(now);
+                osc1.stop(now + 0.35);
+                osc2.stop(now + 0.35);
+            }
+        }
+
+        const sfx = new SoundFX();
+
+        // ==========================================
+        // GAME CONFIG & VARIABLES
+        // ==========================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const lightCanvas = document.createElement('canvas');
+        const lightCtx = lightCanvas.getContext('2d');
+
+        // Arena Boundaries
+        const ARENA_SIZE = 2400;
+
+        // Game State Variables
+        let gameState = 'START'; // START, GAME, UPGRADE, GAMEOVER
+        let timeElapsed = 0;
+        let score = 0;
+        let baseSpawnRate = 3.5; // Seconds between spawns
+        let spawnTimer = 0;
+        let batterySpawnTimer = 0;
+        let wave = 1;
+        let waveTimer = 45; // 45 seconds per wave
+        let activeUpgrades = [];
+        let upgradeSelection = [];
+        let gameTime = 0;
+
+        // Screen Shake
+        let shakeIntensity = 0;
+        let shakeDecay = 0.9;
+
+        // Visual flash overlay
+        let flashColor = 'rgba(255, 255, 255, 0)';
+        let flashTime = 0;
+
+        // Camera Object
+        const camera = {
+            x: 0,
+            y: 0,
+            targetX: 0,
+            targetY: 0,
+            lerp: 0.1
+        };
+
+        // Keyboard & Mouse inputs
+        const keys = {};
+        const mouse = { x: 0, y: 0 };
+
+        // Game Entities Arrays
+        let enemies = [];
+        let batteries = [];
+        let xpGems = [];
+        let particles = [];
+        let floatingTexts = [];
+
+        // ==========================================
+        // PLAYER ENTITY DEFINITION
+        // ==========================================
+        const player = {
+            x: ARENA_SIZE / 2,
+            y: ARENA_SIZE / 2,
+            radius: 14,
+            speed: 3.8,
+            maxHp: 100,
+            hp: 100,
+            
+            // Battery Stats
+            maxBattery: 100,
+            battery: 100,
+            batteryDrainRate: 5.5, // units/sec
+            batteryEfficiency: 1.0, // multiplier
+            isBatteryFlicker: false,
+            
+            // Flashlight Wedge Stats
+            coneRange: 320,
+            coneAngle: 0.75, // in radians (~43 degrees)
+            coneDamage: 75, // HP per second
+            coneSlowing: 0.45, // Multiplier to enemy speed when lit
+            angle: 0,
+            
+            // Sub-Beacons / Ambient Rings
+            ambientLightRadius: 65,
+            auraDamage: 0, // Enabled by upgrade
+            pulseAuraRadius: 0, // Used for shockwave flare animation
+
+            // Dash Stats
+            dashCooldown: 1.5,
+            dashTimer: 0,
+            dashDuration: 0.15,
+            dashActiveTimer: 0,
+            isDashing: false,
+            dashSpeed: 13,
+            dashDirection: { x: 0, y: 0 },
+
+            // Shockwave Flare Stats
+            shockwaveCooldown: 4.5,
+            shockwaveTimer: 0,
+            shockwaveUnlocked: false,
+
+            // Levelling
+            level: 1,
+            xp: 0,
+            xpNeeded: 60,
+
+            // Physics/Movement variables for Squash and Stretch
+            vx: 0,
+            vy: 0,
+            lastX: ARENA_SIZE / 2,
+            lastY: ARENA_SIZE / 2,
+
+            reset() {
+                this.x = ARENA_SIZE / 2;
+                this.y = ARENA_SIZE / 2;
+                this.hp = 100;
+                this.maxHp = 100;
+                this.battery = 100;
+                this.maxBattery = 100;
+                this.batteryDrainRate = 5.5;
+                this.batteryEfficiency = 1.0;
+                this.coneRange = 320;
+                this.coneAngle = 0.75;
+                this.coneDamage = 75;
+                this.coneSlowing = 0.45;
+                this.ambientLightRadius = 65;
+                this.auraDamage = 0;
+                this.pulseAuraRadius = 0;
+                this.dashCooldown = 1.5;
+                this.dashTimer = 0;
+                this.isDashing = false;
+                this.dashActiveTimer = 0;
+                this.shockwaveUnlocked = false;
+                this.shockwaveTimer = 0;
+                this.level = 1;
+                this.xp = 0;
+                this.xpNeeded = 60;
+                this.speed = 3.8;
+                this.vx = 0;
+                this.vy = 0;
+                this.lastX = this.x;
+                this.lastY = this.y;
+            },
+
+            update(dt) {
+                // Dash cooldown
+                if (this.dashTimer > 0) this.dashTimer -= dt;
+                if (this.shockwaveTimer > 0) this.shockwaveTimer -= dt;
+
+                // Handle Dash physics
+                if (this.isDashing) {
+                    this.dashActiveTimer -= dt;
+                    this.x += this.dashDirection.x * this.dashSpeed;
+                    this.y += this.dashDirection.y * this.dashSpeed;
+                    
+                    // Spawn dash trail particles
+                    spawnParticle(this.x, this.y, -this.dashDirection.x * 2, -this.dashDirection.y * 2, 'rgba(0, 240, 255, 0.4)', 6, 0.35, 'spark');
+                    
+                    if (this.dashActiveTimer <= 0) {
+                        this.isDashing = false;
+                    }
+                } else {
+                    // Regular movement
+                    let dx = 0;
+                    let dy = 0;
+
+                    if (keys['w'] || keys['KeyW'] || keys['ArrowUp']) dy -= 1;
+                    if (keys['s'] || keys['KeyS'] || keys['ArrowDown']) dy += 1;
+                    if (keys['a'] || keys['KeyA'] || keys['ArrowLeft']) dx -= 1;
+                    if (keys['d'] || keys['KeyD'] || keys['ArrowRight']) dx += 1;
+
+                    // Normalize move vector
+                    if (dx !== 0 || dy !== 0) {
+                        const len = Math.sqrt(dx * dx + dy * dy);
+                        dx /= len;
+                        dy /= len;
+
+                        this.x += dx * this.speed;
+                        this.y += dy * this.speed;
+
+                        this.vx = dx * this.speed;
+                        this.vy = dy * this.speed;
+
+                        // Spawn soft walking light sparks
+                        if (Math.random() < 0.2) {
+                            spawnParticle(this.x, this.y, (Math.random() - 0.5) * 1, (Math.random() - 0.5) * 1, 'rgba(255, 255, 255, 0.25)', 4, 0.5, 'spark');
+                        }
+                    } else {
+                        this.vx = 0;
+                        this.vy = 0;
+                    }
+
+                    // Check for Dash trigger (Shift key)
+                    if ((keys['Shift'] || keys['ShiftLeft'] || keys['ShiftRight']) && this.dashTimer <= 0 && (dx !== 0 || dy !== 0)) {
+                        this.isDashing = true;
+                        this.dashActiveTimer = this.dashDuration;
+                        this.dashTimer = this.dashCooldown;
+                        this.dashDirection = { x: dx, y: dy };
+                        // Play whoosh dash sound
+                        sfx.playClick(); // Pitch will sound like a quick release
+                        triggerFlash('rgba(0, 240, 255, 0.08)', 0.15);
+                    }
+                }
+
+                // Check bounds: player cannot leave the arena. 
+                // Border Warning flashing and continuous erosion damage if outside.
+                const warnEl = document.getElementById('glitch-border-warning');
+                if (this.x < 0 || this.x > ARENA_SIZE || this.y < 0 || this.y > ARENA_SIZE) {
+                    warnEl.classList.add('glitch-border-flash');
+                    this.hp -= 20 * dt; // take damage
+                    if (Math.random() < 0.1) {
+                        sfx.playHurt();
+                        triggerScreenShake(4);
+                        spawnFloatingText(this.x, this.y - 15, "OUT_OF_BOUNDS_ERR", "#ff2a5f");
+                    }
+                    // Emit extreme red warning sparks
+                    spawnParticle(this.x + (Math.random()-0.5)*20, this.y + (Math.random()-0.5)*20, (Math.random()-0.5)*3, (Math.random()-0.5)*3, '#ff2a5f', 5, 0.6, 'spark');
+                } else {
+                    warnEl.classList.remove('glitch-border-flash');
+                }
+
+                // Battery Drain
+                if (this.battery > 0) {
+                    this.battery = Math.max(0, this.battery - this.batteryDrainRate * this.batteryEfficiency * dt);
+                }
+
+                // Flashlight Flickering when battery is low
+                this.isBatteryFlicker = (this.battery < 20 && this.battery > 0 && Math.random() < 0.25);
+
+                // Flashlight Angle calculation pointing to mouse
+                const playerScreenX = this.x - camera.x;
+                const playerScreenY = this.y - camera.y;
+                const mx = mouse.x - playerScreenX;
+                const my = mouse.y - playerScreenY;
+                this.angle = Math.atan2(my, mx);
+
+                // Decay pulse aura
+                if (this.pulseAuraRadius > 0) {
+                    this.pulseAuraRadius += 300 * dt;
+                    if (this.pulseAuraRadius > 220) {
+                        this.pulseAuraRadius = 0;
+                    }
+                }
+
+                // Aura slow burn from Supercharged Aura Upgrade
+                if (this.auraDamage > 0) {
+                    // Visual particles for aura
+                    if (Math.random() < 0.3) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const px = this.x + Math.cos(angle) * this.ambientLightRadius;
+                        const py = this.y + Math.sin(angle) * this.ambientLightRadius;
+                        spawnParticle(px, py, (Math.random()-0.5)*0.5, (Math.random()-0.5)*0.5, '#39ff14', 3, 0.4, 'spark');
+                    }
+                }
+            },
+
+            draw(ctx) {
+                const rx = this.x - camera.x;
+                const ry = this.y - camera.y;
+
+                // Squash and stretch calculations
+                const speedMagnitude = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                let stretchX = 1;
+                let stretchY = 1;
+                let rotationAngle = 0;
+
+                if (this.isDashing) {
+                    stretchX = 1.45;
+                    stretchY = 0.65;
+                    rotationAngle = Math.atan2(this.dashDirection.y, this.dashDirection.x);
+                } else if (speedMagnitude > 0.1) {
+                    stretchX = 1 + (speedMagnitude * 0.04);
+                    stretchY = 1 - (speedMagnitude * 0.04);
+                    rotationAngle = Math.atan2(this.vy, this.vx);
+                }
+
+                ctx.save();
+                ctx.translate(rx, ry);
+                ctx.rotate(rotationAngle);
+
+                // Draw beacon core (outer blur)
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#ffffff';
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, this.radius * stretchX, this.radius * stretchY, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw tech inner lines inside player core
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = '#00f0ff';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius * 0.5 * stretchX, 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.restore();
+
+                // Draw Shockwave Flare wave ring
+                if (this.pulseAuraRadius > 0) {
+                    ctx.save();
+                    ctx.strokeStyle = `rgba(0, 240, 255, ${1 - (this.pulseAuraRadius / 220)})`;
+                    ctx.lineWidth = 3;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#00f0ff';
+                    ctx.beginPath();
+                    ctx.arc(rx, ry, this.pulseAuraRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            },
+
+            addXp(amount) {
+                this.xp += amount;
+                if (this.xp >= this.xpNeeded) {
+                    this.xp -= this.xpNeeded;
+                    this.level++;
+                    this.xpNeeded = Math.floor(this.xpNeeded * 1.35) + 30;
+                    triggerUpgradeChoice();
+                }
+            },
+
+            triggerShockwave() {
+                if (this.battery < 25) {
+                    spawnFloatingText(this.x, this.y - 20, "BATTERY_LOW", "#ff2a5f");
+                    sfx.playClick();
+                    return;
+                }
+                
+                this.battery -= 25;
+                this.shockwaveTimer = this.shockwaveCooldown;
+                this.pulseAuraRadius = 30;
+                sfx.playFlare();
+                triggerScreenShake(10);
+                triggerFlash('rgba(0, 240, 255, 0.15)', 0.3);
+
+                // Burn & push away enemies
+                enemies.forEach(enemy => {
+                    const dx = enemy.x - this.x;
+                    const dy = enemy.y - this.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 220) {
+                        // Deal heavy flat damage
+                        enemy.hp -= 120;
+                        enemy.damageFlash = 8;
+                        
+                        // Push back
+                        const pushForce = 140 - (dist * 0.5);
+                        if (pushForce > 20) {
+                            const angle = Math.atan2(dy, dx);
+                            enemy.x += Math.cos(angle) * pushForce;
+                            enemy.y += Math.sin(angle) * pushForce;
+                            // Make sure they stay in limits
+                            enemy.x = Math.max(20, Math.min(ARENA_SIZE - 20, enemy.x));
+                            enemy.y = Math.max(20, Math.min(ARENA_SIZE - 20, enemy.y));
+                        }
+                        
+                        // Glitch Sparks
+                        for(let i=0; i<12; i++) {
+                            spawnParticle(enemy.x, enemy.y, (Math.random()-0.5)*8, (Math.random()-0.5)*8, '#00f0ff', 4, 0.8, 'spark');
+                        }
+                        spawnFloatingText(enemy.x, enemy.y - 10, "FLARE_STRIKE", "#00f0ff");
+                    }
+                });
+            }
+        };
+
+        // ==========================================
+        // ENEMY DEFINITION (ANOMALIES)
+        // ==========================================
+        class Enemy {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.isLit = false;
+                this.damageFlash = 0;
+                this.chargeTimer = 0;
+                this.chargeState = 0; // 0 = normal, 1 = telegraphing, 2 = charging
+                this.chargeAngle = 0;
+
+                // Configure statistics based on type
+                switch(type) {
+                    case 'swarmer': // Fast, zigzag, fragile
+                        this.baseSpeed = 3.3 + (wave * 0.1);
+                        this.maxHp = 45 + (wave * 12);
+                        this.radius = 11;
+                        this.damage = 18; // HP per sec
+                        this.xpVal = 12;
+                        break;
+                    case 'colossus': // Giant boss, slow, telegraph charge
+                        this.baseSpeed = 0.9 + (wave * 0.05);
+                        this.maxHp = 600 + (wave * 220);
+                        this.radius = 32;
+                        this.damage = 40;
+                        this.xpVal = 60;
+                        break;
+                    case 'splitter': // Splits into swarmers on death
+                        this.baseSpeed = 1.4 + (wave * 0.08);
+                        this.maxHp = 130 + (wave * 40);
+                        this.radius = 20;
+                        this.damage = 25;
+                        this.xpVal = 25;
+                        break;
+                    case 'miniswarmer': // Minor splitter product
+                        this.baseSpeed = 3.8;
+                        this.maxHp = 25;
+                        this.radius = 7;
+                        this.damage = 10;
+                        this.xpVal = 0;
+                        break;
+                    case 'lurker':
+                    default: // Standard creepy anomaly
+                        this.baseSpeed = 1.7 + (wave * 0.12);
+                        this.maxHp = 90 + (wave * 25);
+                        this.radius = 15;
+                        this.damage = 22;
+                        this.xpVal = 15;
+                        break;
+                }
+
+                this.hp = this.maxHp;
+                this.speed = this.baseSpeed;
+            }
+
+            update(dt) {
+                const dx = player.x - this.x;
+                const dy = player.y - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                // Flashlight Check: Is the enemy inside the flashlight cone or ambient radius?
+                let illuminated = false;
+                
+                if (dist <= player.coneRange && player.battery > 0 && !player.isBatteryFlicker) {
+                    // Check angle difference
+                    const angleToEnemy = Math.atan2(dy, dx);
+                    let diff = angleToEnemy - player.angle;
+                    
+                    // Normalize to [-PI, PI]
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+
+                    if (Math.abs(diff) <= player.coneAngle / 2) {
+                        illuminated = true;
+                    }
+                }
+
+                // Revealed by safety ambient ring around the player
+                if (dist <= player.ambientLightRadius) {
+                    illuminated = true;
+                }
+
+                this.isLit = illuminated;
+
+                if (this.damageFlash > 0) this.damageFlash--;
+
+                // Behaviour based on light status
+                if (this.isLit) {
+                    // Slown down in light
+                    this.speed = this.baseSpeed * player.coneSlowing;
+                    
+                    // Burn away: take damage over time
+                    // Ambient light deals less damage, direct cone deals full
+                    const actualDmg = (dist <= player.ambientLightRadius && dist > 130) ? (player.coneDamage * 0.15) : player.coneDamage;
+                    this.hp -= actualDmg * dt;
+                    
+                    // Sizzle particles
+                    if (Math.random() < 0.4) {
+                        spawnParticle(this.x + (Math.random()-0.5)*this.radius, this.y + (Math.random()-0.5)*this.radius, (Math.random()-0.5)*4, (Math.random()-0.5)*4, '#ff2a5f', 3, 0.4, 'spark');
+                        sfx.playBurn();
+                    }
+
+                    // Float error codes occasionally
+                    if (Math.random() < 0.015) {
+                        const errorPhrases = ["404", "ERR_NULL", "NaN", "SEGFAULT", "OVERFLOW", "EOF", "MUTATION_ERR", "UNCAUGHT_TYPE", "ABORTED"];
+                        const rollText = errorPhrases[Math.floor(Math.random() * errorPhrases.length)];
+                        spawnFloatingText(this.x, this.y - this.radius, rollText, "#ff2a5f");
+                        triggerScreenShake(1.5);
+                    }
+                } else {
+                    // In the dark: Regenerate health & Speed up (Hostile Rage!)
+                    this.hp = Math.min(this.maxHp, this.hp + (this.maxHp * 0.06) * dt);
+                    this.speed = this.baseSpeed * 1.55;
+                }
+
+                // AI Pathfinding & specialized movement patterns
+                if (this.type === 'swarmer') {
+                    // Swarmers move in a slithering wave pattern
+                    const baseAngle = Math.atan2(dy, dx);
+                    const waveOffset = Math.sin(gameTime * 10 + this.x) * 0.65;
+                    const finalAngle = baseAngle + waveOffset;
+                    this.x += Math.cos(finalAngle) * this.speed;
+                    this.y += Math.sin(finalAngle) * this.speed;
+                } else if (this.type === 'colossus') {
+                    // Colossus Charges periodically
+                    this.chargeTimer += dt;
+                    if (this.chargeState === 0 && this.chargeTimer >= 4.0) {
+                        // Start charging/telegraph phase
+                        this.chargeState = 1;
+                        this.chargeTimer = 0;
+                        this.chargeAngle = Math.atan2(dy, dx);
+                        spawnFloatingText(this.x, this.y - 32, "CHARGE_PROTOCOL_WARN", "#ff2a5f");
+                    } else if (this.chargeState === 1) {
+                        // Flashing red telegraphing (lasts 1 second)
+                        this.damageFlash = 2; // Keep flashing
+                        if (this.chargeTimer >= 1.0) {
+                            this.chargeState = 2;
+                            this.chargeTimer = 0;
+                            sfx.playFlare(); // Loud heavy sound
+                        }
+                    } else if (this.chargeState === 2) {
+                        // High speed dash (lasts 1.2 seconds)
+                        this.x += Math.cos(this.chargeAngle) * (this.baseSpeed * 4.5);
+                        this.y += Math.sin(this.chargeAngle) * (this.baseSpeed * 4.5);
+                        // Emit heavy smoke trail
+                        if (Math.random() < 0.5) {
+                            spawnParticle(this.x, this.y, 0, 0, '#9d00ff', 7, 0.8, 'ash');
+                        }
+                        if (this.chargeTimer >= 1.2) {
+                            this.chargeState = 0;
+                            this.chargeTimer = 0;
+                        }
+                    } else {
+                        // Normal colossus movement
+                        this.x += Math.cos(Math.atan2(dy, dx)) * this.speed;
+                        this.y += Math.sin(Math.atan2(dy, dx)) * this.speed;
+                    }
+                } else {
+                    // Standard Lurker / Miniswarmer linear pursue
+                    const moveAngle = Math.atan2(dy, dx);
+                    this.x += Math.cos(moveAngle) * this.speed;
+                    this.y += Math.sin(moveAngle) * this.speed;
+                }
+
+                // Ambient passive aura damage if player unlocked "Supercharged Aura"
+                if (player.auraDamage > 0 && dist <= player.ambientLightRadius) {
+                    this.hp -= player.auraDamage * dt;
+                    if (Math.random() < 0.15) {
+                        spawnParticle(this.x, this.y, (Math.random()-0.5)*3, (Math.random()-0.5)*3, '#39ff14', 3, 0.3, 'spark');
+                    }
+                }
+
+                // Limit enemies to boundaries
+                this.x = Math.max(15, Math.min(ARENA_SIZE - 15, this.x));
+                this.y = Math.max(15, Math.min(ARENA_SIZE - 15, this.y));
+
+                // Collision with player
+                if (dist < this.radius + player.radius) {
+                    if (!player.isDashing) {
+                        player.hp -= this.damage * dt;
+                        
+                        // Hurt FX
+                        if (Math.random() < 0.08) {
+                            sfx.playHurt();
+                            triggerScreenShake(6);
+                            triggerFlash('rgba(255, 42, 95, 0.1)', 0.15);
+                            spawnFloatingText(player.x, player.y - 20, "SYSTEM_CORROSION", "#ff2a5f");
+                        }
+                        
+                        // Spray red blood sparks
+                        spawnParticle(player.x, player.y, (Math.random()-0.5)*6, (Math.random()-0.5)*6, '#ff2a5f', 4, 0.5, 'spark');
+                    }
+                }
+            }
+
+            draw(ctx) {
+                const rx = this.x - camera.x;
+                const ry = this.y - camera.y;
+
+                // Skip drawing if completely off-screen
+                if (rx < -100 || rx > canvas.width + 100 || ry < -100 || ry > canvas.height + 100) {
+                    return;
+                }
+
+                ctx.save();
+                ctx.translate(rx, ry);
+
+                if (this.isLit) {
+                    // Lit state: Neon red/orange/white, heavily glitched, glowing, burning
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = '#ff2a5f';
+                    ctx.strokeStyle = '#ff2a5f';
+                    ctx.fillStyle = '#ffffff';
+
+                    if (this.damageFlash > 0) {
+                        ctx.fillStyle = '#ff2a5f';
+                    }
+
+                    // Procedural Glitched Box Drawing
+                    const offset = Math.sin(gameTime * 45) * (this.radius * 0.4);
+                    
+                    // Draw random horizontal tracking slices
+                    ctx.lineWidth = 2;
+                    for (let i = 0; i < 4; i++) {
+                        const sliceY = (i - 2) * (this.radius * 0.4);
+                        const sliceOffset = (Math.random() - 0.5) * this.radius * 0.9;
+                        const sliceW = this.radius * 1.5 * (0.8 + Math.random()*0.4);
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(-sliceW/2 + sliceOffset, sliceY);
+                        ctx.lineTo(sliceW/2 + sliceOffset, sliceY);
+                        ctx.stroke();
+                    }
+
+                    // Core block
+                    ctx.fillRect(-this.radius/2 + offset, -this.radius/2, this.radius, this.radius);
+
+                    // Float random binary digits inside the bounds
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#ff2a5f';
+                    ctx.font = `${this.radius * 0.8}px Courier New`;
+                    ctx.fillText(Math.random() > 0.5 ? '1' : '0', -this.radius*0.6, this.radius*0.4);
+
+                    // Critical health line bar below lit enemies
+                    ctx.fillStyle = '#101026';
+                    ctx.fillRect(-this.radius, this.radius + 8, this.radius * 2, 4);
+                    ctx.fillStyle = '#ff2a5f';
+                    ctx.fillRect(-this.radius, this.radius + 8, (this.radius * 2) * (this.hp / this.maxHp), 4);
+                } else {
+                    // Dark state: Faint purple-blue static fuzz. Lurking.
+                    // This lets the player barely make out their spooky shape in the dark!
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = 'rgba(120, 70, 240, 0.3)';
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(-this.radius, -this.radius, this.radius*2, this.radius*2);
+                    
+                    // VHS scanline running through it
+                    const scanlineY = -this.radius + ((gameTime * 40 + this.x) % (this.radius * 2));
+                    ctx.beginPath();
+                    ctx.moveTo(-this.radius, scanlineY);
+                    ctx.lineTo(this.radius, scanlineY);
+                    ctx.stroke();
+
+                    // Subtle dot matrix noise
+                    ctx.fillStyle = 'rgba(0, 240, 255, 0.15)';
+                    ctx.fillRect((Math.random() - 0.5) * this.radius, (Math.random() - 0.5) * this.radius, 3, 3);
+                }
+
+                ctx.restore();
+            }
+
+            die() {
+                sfx.playEnemyDie();
+                triggerScreenShake(this.type === 'colossus' ? 12 : 3);
+                score++;
+
+                // Spawn death particles (neon explosion)
+                const particlesCount = this.type === 'colossus' ? 50 : 15;
+                const burstColor = this.type === 'colossus' ? '#9d00ff' : '#ff2a5f';
+                for (let i = 0; i < particlesCount; i++) {
+                    const ang = Math.random() * Math.PI * 2;
+                    const speed = 2 + Math.random() * 6;
+                    spawnParticle(this.x, this.y, Math.cos(ang) * speed, Math.sin(ang) * speed, burstColor, 5, 0.8, 'spark');
+                }
+
+                // Spawn floating binary bits on death
+                const binaryCount = this.type === 'colossus' ? 15 : 4;
+                for (let i = 0; i < binaryCount; i++) {
+                    const ang = Math.random() * Math.PI * 2;
+                    const speed = 1 + Math.random() * 3;
+                    spawnParticle(this.x, this.y, Math.cos(ang)*speed, Math.sin(ang)*speed, '#ffffff', 10, 1.2, 'binary');
+                }
+
+                // Drop XP gem
+                if (this.xpVal > 0) {
+                    spawnXpGem(this.x, this.y, this.xpVal);
+                }
+
+                // Splitter logic: create children miniswarmers
+                if (this.type === 'splitter') {
+                    for (let i = 0; i < 2; i++) {
+                        const rx = this.x + (Math.random()-0.5)*15;
+                        const ry = this.y + (Math.random()-0.5)*15;
+                        const baby = new Enemy(rx, ry, 'miniswarmer');
+                        enemies.push(baby);
+                    }
+                    spawnFloatingText(this.x, this.y, "SPLIT_MUTATION", "#ff2a5f");
+                }
+            }
+        }
+
+        // ==========================================
+        // BATTERY ENTITY DEFINITION
+        // ==========================================
+        class Battery {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 10;
+                this.pulseTime = Math.random() * 5;
+            }
+
+            update(dt) {
+                this.pulseTime += dt * 4;
+
+                // Collide with player
+                const dx = player.x - this.x;
+                const dy = player.y - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < this.radius + player.radius) {
+                    // Refill battery
+                    player.battery = Math.min(player.maxBattery, player.battery + (player.maxBattery * 0.35));
+                    sfx.playBattery();
+                    
+                    // Flash effect
+                    triggerFlash('rgba(0, 240, 255, 0.08)', 0.15);
+                    
+                    // Create floating text
+                    spawnFloatingText(this.x, this.y - 12, "+35% BATTERY", "#00f0ff");
+                    
+                    // Spawn glowing cyan sparks
+                    for (let i = 0; i < 12; i++) {
+                        const ang = Math.random() * Math.PI * 2;
+                        const speed = 1.5 + Math.random() * 3;
+                        spawnParticle(this.x, this.y, Math.cos(ang)*speed, Math.sin(ang)*speed, '#00f0ff', 4, 0.6, 'spark');
+                    }
+                    
+                    return true; // flag to delete
+                }
+                return false;
+            }
+
+            draw(ctx) {
+                const rx = this.x - camera.x;
+                const ry = this.y - camera.y;
+
+                // Pulsing glow size
+                const sizeBonus = Math.sin(this.pulseTime) * 3;
+
+                ctx.save();
+                ctx.translate(rx, ry);
+
+                // Draw pulsing neon outer circle
+                ctx.shadowBlur = 10 + sizeBonus;
+                ctx.shadowColor = '#00f0ff';
+                ctx.strokeStyle = '#00f0ff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius + sizeBonus/2, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Draw central tech core
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowBlur = 0;
+                ctx.fillRect(-this.radius*0.5, -this.radius*0.6, this.radius, this.radius*1.2);
+                // Top terminal pin
+                ctx.fillRect(-this.radius*0.25, -this.radius*0.9, this.radius*0.5, this.radius*0.3);
+
+                ctx.restore();
+            }
+        }
+
+        // ==========================================
+        // XP GEM DEFINITION
+        // ==========================================
+        class XpGem {
+            constructor(x, y, value) {
+                this.x = x;
+                this.y = y;
+                this.value = value;
+                this.radius = 6;
+                this.pulseTime = Math.random() * 10;
+                this.collected = false;
+            }
+
+            update(dt) {
+                this.pulseTime += dt * 5;
+
+                const dx = player.x - this.x;
+                const dy = player.y - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                // Collection magnetism check
+                // Base pull radius is 140px, increases with level or upgrades
+                const pullRadius = 150;
+                
+                if (dist < pullRadius) {
+                    this.collected = true;
+                }
+
+                if (this.collected) {
+                    // Fly towards player with accelerating speed
+                    const angle = Math.atan2(dy, dx);
+                    const flySpeed = 7 + (180 / Math.max(10, dist)); // accelerate near player
+                    this.x += Math.cos(angle) * flySpeed;
+                    this.y += Math.sin(angle) * flySpeed;
+                }
+
+                // Grab XP check
+                if (dist < player.radius + this.radius) {
+                    player.addXp(this.value);
+                    // play tiny high synth blip
+                    sfx.playBurn(); 
+                    return true; // remove
+                }
+                return false;
+            }
+
+            draw(ctx) {
+                const rx = this.x - camera.x;
+                const ry = this.y - camera.y;
+
+                if (rx < -50 || rx > canvas.width + 50 || ry < -50 || ry > canvas.height + 50) return;
+
+                const glow = Math.sin(this.pulseTime) * 3;
+
+                ctx.save();
+                ctx.translate(rx, ry);
+
+                ctx.shadowBlur = 8 + glow;
+                ctx.shadowColor = '#39ff14';
+                ctx.fillStyle = '#39ff14';
+                
+                // Draw XP diamond/gem shape
+                ctx.beginPath();
+                ctx.moveTo(0, -this.radius);
+                ctx.lineTo(this.radius, 0);
+                ctx.lineTo(0, this.radius);
+                ctx.lineTo(-this.radius, 0);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // ==========================================
+        // PARTICLE SYSTEM
+        // ==========================================
+        class Particle {
+            constructor(x, y, vx, vy, color, size, life, type) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.color = color;
+                this.size = size;
+                this.life = life;
+                this.maxLife = life;
+                this.type = type; // spark, binary, ash
+                this.char = Math.random() > 0.5 ? '1' : '0';
+            }
+
+            update(dt) {
+                this.life -= dt;
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Slow down slightly
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+            }
+
+            draw(ctx) {
+                const rx = this.x - camera.x;
+                const ry = this.y - camera.y;
+
+                if (rx < -20 || rx > canvas.width + 20 || ry < -20 || ry > canvas.height + 20) return;
+
+                const opacity = Math.max(0, this.life / this.maxLife);
+                ctx.save();
+
+                if (this.type === 'spark') {
+                    ctx.fillStyle = this.color;
+                    ctx.globalAlpha = opacity;
+                    ctx.shadowBlur = 5;
+                    ctx.shadowColor = this.color;
+                    ctx.fillRect(rx - this.size/2, ry - this.size/2, this.size, this.size);
+                } else if (this.type === 'binary') {
+                    ctx.fillStyle = this.color;
+                    ctx.globalAlpha = opacity;
+                    ctx.font = `${this.size}px Courier New`;
+                    ctx.fillText(this.char, rx, ry);
+                } else if (this.type === 'ash') {
+                    // Soft fading smoke puff
+                    ctx.fillStyle = this.color;
+                    ctx.globalAlpha = opacity * 0.3;
+                    ctx.beginPath();
+                    ctx.arc(rx, ry, this.size * (2 - opacity), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        function spawnParticle(x, y, vx, vy, color, size, life, type) {
+            particles.push(new Particle(x, y, vx, vy, color, size, life, type));
+        }
+
+        // ==========================================
+        // FLOATING TEXTS SYSTEM
+        // ==========================================
+        class FloatingText {
+            constructor(x, y, text, color) {
+                this.x = x;
+                this.y = y;
+                this.text = text;
+                this.color = color;
+                this.life = 1.2; // 1.2 seconds life
+                this.maxLife = 1.2;
+                this.vy = -0.7; // drift upwards
+                this.vx = (Math.random() - 0.5) * 0.4;
+            }
+
+            update(dt) {
+                this.life -= dt;
+                this.x += this.vx * 60 * dt;
+                this.y += this.vy * 60 * dt;
+            }
+
+            draw(ctx) {
+                const rx = this.x - camera.x;
+                const ry = this.y - camera.y;
+
+                if (rx < -100 || rx > canvas.width + 100 || ry < -100 || ry > canvas.height + 100) return;
+
+                const opacity = Math.max(0, this.life / this.maxLife);
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                ctx.font = 'bold 10px Courier New';
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = this.color;
+                ctx.textAlign = 'center';
+                ctx.fillText(this.text, rx, ry);
+                ctx.restore();
+            }
+        }
+
+        function spawnFloatingText(x, y, text, color) {
+            floatingTexts.push(new FloatingText(x, y, text, color));
+        }
+
+        // ==========================================
+        // UPGRADES CATALOG & SYSTEM
+        // ==========================================
+        const UPGRADES = [
+            {
+                id: 'wide_cone',
+                name: 'Wide Cone Lens',
+                desc: 'Increases flashlight cone spread angle by 25%. Allows sweeping larger sectors.',
+                icon: '◤',
+                apply() {
+                    player.coneAngle += 0.22;
+                }
+            },
+            {
+                id: 'hyper_focus',
+                name: 'Prismatic Focus',
+                desc: 'Narrows flashlight angle by 15%, but increases range by 80px and damage by 50%.',
+                icon: '⌖',
+                apply() {
+                    player.coneAngle -= 0.12;
+                    player.coneRange += 80;
+                    player.coneDamage += 45;
+                }
+            },
+            {
+                id: 'high_wattage',
+                name: 'High Wattage Filament',
+                desc: 'Increases flashlight burn damage by 35%. Dissolves anomalies much faster.',
+                icon: '⚡',
+                apply() {
+                    player.coneDamage += 35;
+                }
+            },
+            {
+                id: 'lithium_cells',
+                name: 'Lithium-Ion Cores',
+                desc: 'Increases maximum battery capacity by 35% and refills it completely.',
+                icon: '🔋',
+                apply() {
+                    player.maxBattery += 35;
+                    player.battery = player.maxBattery;
+                }
+            },
+            {
+                id: 'alternator',
+                name: 'Regen Alternator',
+                desc: 'Flashlight consumes battery 25% slower. Optimizes active power efficiency.',
+                icon: '♻',
+                apply() {
+                    player.batteryEfficiency *= 0.75;
+                }
+            },
+            {
+                id: 'overclock_speed',
+                name: 'Thruster Overclock',
+                desc: 'Increases movement speed by 18% and reduces dash cooldown by 0.3s.',
+                icon: '🏃',
+                apply() {
+                    player.speed += 0.7;
+                    player.dashCooldown = Math.max(0.6, player.dashCooldown - 0.3);
+                }
+            },
+            {
+                id: 'link_repair',
+                name: 'Nanite Repair Link',
+                desc: 'Heals core systems by 50 HP. Increases maximum Integrity (Max HP) by 25.',
+                icon: '🔧',
+                apply() {
+                    player.maxHp += 25;
+                    player.hp = Math.min(player.maxHp, player.hp + 50);
+                }
+            },
+            {
+                id: 'shockwave',
+                name: 'Solar Shockwave Flare',
+                desc: 'Unlocks or boosts Solar Flare (SPACE/Right-Click). Emits 360° pushback/damage flare.',
+                icon: '✺',
+                apply() {
+                    if (!player.shockwaveUnlocked) {
+                        player.shockwaveUnlocked = true;
+                    } else {
+                        // Boost flare: reduce cooldown and cost
+                        player.shockwaveCooldown = Math.max(2.0, player.shockwaveCooldown - 1.0);
+                    }
+                }
+            },
+            {
+                id: 'aura_burn',
+                name: 'Supercharged Aura',
+                desc: 'Emits a persistent 360° light ring (65px) that burns anomalies slowly (16 DPS).',
+                icon: '⚙',
+                apply() {
+                    player.auraDamage += 16;
+                }
+            },
+            {
+                id: 'time_dilation',
+                name: 'Friction Dampener',
+                desc: 'Permanently slows down all surrounding glitches by 12% in the arena.',
+                icon: '⌛',
+                apply() {
+                    enemies.forEach(e => e.baseSpeed *= 0.88);
+                }
+            }
+        ];
+
+        // ==========================================
+        // UTILITIES
+        // ==========================================
+        function triggerScreenShake(amt) {
+            shakeIntensity = Math.min(25, shakeIntensity + amt);
+        }
+
+        function triggerFlash(color, time) {
+            flashColor = color;
+            flashTime = time;
+        }
+
+        function getDistance(x1, y1, x2, y2) {
+            return Math.sqrt((x2 - x1)**2 + (y2 - y1)**2);
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        // ==========================================
+        // SPAWN PROTOCOLS
+        // ==========================================
+        function getSafeSpawnCoords() {
+            // Find coords outside the camera view but inside the arena boundaries
+            const viewPadding = 100;
+            let spawnX, spawnY;
+            let attempts = 0;
+            
+            while (attempts < 50) {
+                spawnX = Math.random() * ARENA_SIZE;
+                spawnY = Math.random() * ARENA_SIZE;
+
+                // Check distance to player. Must be at least 400px away
+                const distToPlayer = getDistance(player.x, player.y, spawnX, spawnY);
+                if (distToPlayer > 400) {
+                    // Check if it falls outside the current viewport
+                    const rx = spawnX - camera.x;
+                    const ry = spawnY - camera.y;
+                    if (rx < -viewPadding || rx > canvas.width + viewPadding || ry < -viewPadding || ry > canvas.height + viewPadding) {
+                        return { x: spawnX, y: spawnY };
+                    }
+                }
+                attempts++;
+            }
+            // Fallback safe spawn
+            return { x: player.x + 450, y: player.y + 450 };
+        }
+
+        function spawnEnemy() {
+            const coords = getSafeSpawnCoords();
+            
+            // Choose enemy type based on current wave
+            let type = 'lurker';
+            const roll = Math.random();
+
+            if (wave === 1) {
+                // Wave 1: only basic lurkers
+                type = 'lurker';
+            } else if (wave === 2) {
+                // Wave 2: introduce swarmers
+                type = roll < 0.35 ? 'swarmer' : 'lurker';
+            } else if (wave === 3) {
+                // Wave 3: introduce splitters
+                if (roll < 0.25) type = 'splitter';
+                else if (roll < 0.55) type = 'swarmer';
+                else type = 'lurker';
+            } else {
+                // Wave 4+: introduce colossus (heavy/boss)
+                if (roll < 0.08) type = 'colossus';
+                else if (roll < 0.28) type = 'splitter';
+                else if (roll < 0.55) type = 'swarmer';
+                else type = 'lurker';
+            }
+
+            enemies.push(new Enemy(coords.x, coords.y, type));
+        }
+
+        function spawnBattery() {
+            const coords = getSafeSpawnCoords();
+            // Wrap in boundary checks just in case
+            const x = Math.max(40, Math.min(ARENA_SIZE - 40, coords.x));
+            const y = Math.max(40, Math.min(ARENA_SIZE - 40, coords.y));
+            batteries.push(new Battery(x, y));
+        }
+
+        function spawnXpGem(x, y, val) {
+            xpGems.push(new XpGem(x, y, val));
+        }
+
+        // ==========================================
+        // INPUT HANDLERS
+        // ==========================================
+        window.addEventListener('keydown', e => {
+            keys[e.key] = true;
+            keys[e.code] = true;
+
+            // Spacebar trigger for Flare Shockwave
+            if (e.key === ' ' || e.code === 'Space') {
+                e.preventDefault();
+                if (gameState === 'GAME' && player.shockwaveUnlocked && player.shockwaveTimer <= 0) {
+                    player.triggerShockwave();
+                }
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            keys[e.key] = false;
+            keys[e.code] = false;
+        });
+
+        window.addEventListener('mousemove', e => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+        });
+
+        // Trigger shockwave flare with right click
+        window.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            if (gameState === 'GAME' && player.shockwaveUnlocked && player.shockwaveTimer <= 0) {
+                player.triggerShockwave();
+            }
+        });
+
+        // Initial setup on resize
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            lightCanvas.width = canvas.width;
+            lightCanvas.height = canvas.height;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // ==========================================
+        // UPGRADE OVERLAY HANDLING
+        // ==========================================
+        function triggerUpgradeChoice() {
+            gameState = 'UPGRADE';
+            sfx.playLevelUp();
+
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+
+            // Pick 3 random distinct upgrades
+            const shuffled = [...UPGRADES].sort(() => 0.5 - Math.random());
+            upgradeSelection = shuffled.slice(0, 3);
+
+            upgradeSelection.forEach((upgrade, idx) => {
+                const card = document.createElement('div');
+                card.className = 'upgrade-card';
+                card.innerHTML = `
+                    <div class="upgrade-icon">${upgrade.icon}</div>
+                    <div class="upgrade-name">${upgrade.name}</div>
+                    <div class="upgrade-desc">${upgrade.desc}</div>
+                    <button class="btn btn-card" style="font-size: 0.85rem; padding: 6px 16px; margin-top: 5px;">INSTALL</button>
+                `;
+                
+                // Click handlers on cards
+                const selectUpgrade = () => {
+                    upgrade.apply();
+                    activeUpgrades.push(upgrade.name);
+                    sfx.playUpgradeSelected();
+                    
+                    // Update Active Upgrades list tags
+                    const tagsDiv = document.getElementById('active-upgrades');
+                    tagsDiv.innerHTML = '';
+                    activeUpgrades.forEach(tag => {
+                        const span = document.createElement('span');
+                        span.className = 'upgrade-tag';
+                        span.innerText = tag;
+                        tagsDiv.appendChild(span);
+                    });
+
+                    // Resume Game
+                    document.getElementById('upgrade-screen').classList.add('hidden');
+                    gameState = 'GAME';
+                };
+
+                card.addEventListener('click', selectUpgrade);
+                container.appendChild(card);
+            });
+
+            document.getElementById('upgrade-screen').classList.remove('hidden');
+        }
+
+        // ==========================================
+        // INITIATE / RESET PROTOCOLS
+        // ==========================================
+        function initGame() {
+            timeElapsed = 0;
+            score = 0;
+            wave = 1;
+            waveTimer = 45;
+            baseSpawnRate = 3.5;
+            spawnTimer = 0;
+            batterySpawnTimer = 0;
+            gameTime = 0;
+            shakeIntensity = 0;
+            flashColor = 'rgba(255,255,255,0)';
+
+            player.reset();
+            enemies = [];
+            batteries = [];
+            xpGems = [];
+            particles = [];
+            floatingTexts = [];
+            activeUpgrades = [];
+
+            document.getElementById('active-upgrades').innerHTML = '';
+
+            // Spawn first battery cells near player
+            batteries.push(new Battery(player.x - 180, player.y + 150));
+            batteries.push(new Battery(player.x + 220, player.y - 120));
+
+            // Camera initial center
+            camera.x = player.x - canvas.width / 2;
+            camera.y = player.y - canvas.height / 2;
+        }
+
+        function triggerGameOver() {
+            gameState = 'GAMEOVER';
+            sfx.playHurt();
+            
+            document.getElementById('end-wave').innerText = wave;
+            document.getElementById('end-score').innerText = score;
+            document.getElementById('end-time').innerText = formatTime(timeElapsed);
+            
+            document.getElementById('gameover-screen').classList.remove('hidden');
+        }
+
+        // UI Event Listeners
+        document.getElementById('start-btn').addEventListener('click', () => {
+            sfx.playClick();
+            initGame();
+            document.getElementById('start-screen').classList.add('hidden');
+            gameState = 'GAME';
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            sfx.playClick();
+            initGame();
+            document.getElementById('gameover-screen').classList.add('hidden');
+            gameState = 'GAME';
+        });
+
+        // ==========================================
+        // MAIN UPDATER ENGINE
+        // ==========================================
+        function update(dt) {
+            if (gameState !== 'GAME') return;
+
+            gameTime += dt;
+            timeElapsed += dt;
+
+            // Handle wave timing
+            waveTimer -= dt;
+            if (waveTimer <= 0) {
+                wave++;
+                waveTimer = 45;
+                baseSpawnRate = Math.max(0.8, baseSpawnRate - 0.55); // enemies spawn faster
+                
+                // Visual Alert
+                triggerFlash('rgba(57, 255, 20, 0.12)', 0.45);
+                spawnFloatingText(player.x, player.y - 40, `WAVE_${wave}_INITIATED`, "#39ff14");
+                triggerScreenShake(8);
+                sfx.playLevelUp(); // Uplifting alert chord
+
+                // Force spawn a few batteries as reward for clearing wave
+                spawnBattery();
+                spawnBattery();
+            }
+
+            // Entity Spawns
+            spawnTimer += dt;
+            if (spawnTimer >= baseSpawnRate) {
+                spawnTimer = 0;
+                // Spawn 1 to 2 enemies depending on wave
+                const count = Math.random() < (0.2 + wave * 0.1) ? 2 : 1;
+                for(let i=0; i<count; i++) spawnEnemy();
+            }
+
+            // Batteries spawning logic (every 18 seconds or if batteries count is zero)
+            batterySpawnTimer += dt;
+            if (batterySpawnTimer >= 18.0 || batteries.length === 0) {
+                batterySpawnTimer = 0;
+                spawnBattery();
+            }
+
+            // Update Player
+            player.update(dt);
+            if (player.hp <= 0) {
+                triggerGameOver();
+                return;
+            }
+
+            // Update Camera follow with clamping to arena limits
+            camera.targetX = player.x - canvas.width / 2;
+            camera.targetY = player.y - canvas.height / 2;
+            
+            // Lerp camera
+            camera.x += (camera.targetX - camera.x) * camera.lerp;
+            camera.y += (camera.targetY - camera.y) * camera.lerp;
+
+            // Clamp camera to arena
+            camera.x = Math.max(0, Math.min(ARENA_SIZE - canvas.width, camera.x));
+            camera.y = Math.max(0, Math.min(ARENA_SIZE - canvas.height, camera.y));
+
+            // Update and clean up batteries
+            for (let i = batteries.length - 1; i >= 0; i--) {
+                const isCollected = batteries[i].update(dt);
+                if (isCollected) {
+                    batteries.splice(i, 1);
+                }
+            }
+
+            // Update and clean up XP gems
+            for (let i = xpGems.length - 1; i >= 0; i--) {
+                const collected = xpGems[i].update(dt);
+                if (collected) {
+                    xpGems.splice(i, 1);
+                }
+            }
+
+            // Update and clean up enemies
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                enemies[i].update(dt);
+                
+                if (enemies[i].hp <= 0) {
+                    enemies[i].die();
+                    enemies.splice(i, 1);
+                }
+            }
+
+            // Update and clean up particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update(dt);
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            // Update and clean up floaty texts
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                floatingTexts[i].update(dt);
+                if (floatingTexts[i].life <= 0) {
+                    floatingTexts.splice(i, 1);
+                }
+            }
+
+            // Decay screen shake
+            if (shakeIntensity > 0) {
+                shakeIntensity *= shakeDecay;
+                if (shakeIntensity < 0.1) shakeIntensity = 0;
+            }
+
+            // Decay flash screen time
+            if (flashTime > 0) {
+                flashTime -= dt;
+            }
+
+            // Update HTML HUD UI
+            document.getElementById('hp-fill').style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
+            document.getElementById('battery-fill').style.width = `${Math.max(0, (player.battery / player.maxBattery) * 100)}%`;
+            
+            const batteryLabel = document.getElementById('battery-label');
+            if (player.battery < 20) {
+                batteryLabel.innerText = "POWER_CRIT!";
+                batteryLabel.classList.add('val-danger');
+            } else {
+                batteryLabel.innerText = "BATTERY";
+                batteryLabel.classList.remove('val-danger');
+            }
+
+            document.getElementById('xp-fill').style.width = `${(player.xp / player.xpNeeded) * 100}%`;
+            document.getElementById('hud-wave').innerText = wave;
+            document.getElementById('hud-score').innerText = score;
+            document.getElementById('hud-timer').innerText = formatTime(timeElapsed);
+            document.getElementById('hud-level').innerText = `LVL ${player.level}`;
+        }
+
+        // ==========================================
+        // RENDERING / RENDERING PIPELINE
+        // ==========================================
+        function draw() {
+            // Apply Camera translate + Camera screen shake offset
+            ctx.save();
+            
+            let shakeX = (Math.random() - 0.5) * shakeIntensity;
+            let shakeY = (Math.random() - 0.5) * shakeIntensity;
+            ctx.translate(shakeX, shakeY);
+
+            // Clear Screen to deep dark void space
+            ctx.fillStyle = '#030308';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw Grid Arena background (translated with Camera)
+            ctx.save();
+            ctx.translate(-camera.x, -camera.y);
+
+            // Draw containment walls / red borders
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#ff2a5f';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ff2a5f';
+            ctx.strokeRect(0, 0, ARENA_SIZE, ARENA_SIZE);
+            ctx.shadowBlur = 0;
+
+            // Draw floor grid lines
+            const gridSpacing = 80;
+            ctx.strokeStyle = 'rgba(40, 40, 75, 0.22)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            
+            // vertical grid lines
+            for (let x = 0; x <= ARENA_SIZE; x += gridSpacing) {
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, ARENA_SIZE);
+            }
+            // horizontal grid lines
+            for (let y = 0; y <= ARENA_SIZE; y += gridSpacing) {
+                ctx.moveTo(0, y);
+                ctx.lineTo(ARENA_SIZE, y);
+            }
+            ctx.stroke();
+
+            // Draw decorative sector coordinate grids
+            ctx.fillStyle = 'rgba(0, 240, 255, 0.15)';
+            ctx.font = '9px Courier New';
+            for (let x = 160; x < ARENA_SIZE; x += 320) {
+                for (let y = 160; y < ARENA_SIZE; y += 320) {
+                    ctx.fillText(`[SEC_x${x}_y${y}]`, x, y);
+                }
+            }
+
+            ctx.restore(); // End grid static translate
+
+            // 2. Draw Entities in World coordinate space
+            // Draw XP Gems
+            xpGems.forEach(gem => gem.draw(ctx));
+
+            // Draw Batteries
+            batteries.forEach(battery => battery.draw(ctx));
+
+            // Draw LIT enemies (drawn BEFORE lighting mask so they get revealed by flashlight!)
+            enemies.forEach(enemy => {
+                if (enemy.isLit) enemy.draw(ctx);
+            });
+
+            // Draw Player squash-stretch core
+            player.draw(ctx);
+
+            // 3. Render 2D Dynamic Flashlight Cones and Ambient Mask
+            renderLightingMask();
+
+            // 4. Draw UNLIT enemies (drawn AFTER lighting mask, so they sit on top of the darkness overlay, faintly visible!)
+            enemies.forEach(enemy => {
+                if (!enemy.isLit) enemy.draw(ctx);
+            });
+
+            // 5. Draw Particles and Floating text (on top of darkness overlay)
+            particles.forEach(p => p.draw(ctx));
+            floatingTexts.forEach(ft => ft.draw(ctx));
+
+            // 6. Offscreen indicators for batteries and heavy bosses
+            drawOffscreenIndicators();
+
+            ctx.restore(); // End general camera/shake translation
+
+            // 7. Draw screen-wide flash overlays (e.g. damages, battery picks)
+            if (flashTime > 0) {
+                ctx.fillStyle = flashColor;
+                ctx.globalAlpha = Math.min(1.0, flashTime * 2);
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        // ==========================================
+        // LIGHTING ENGINE (DESTINATION-OUT clipping)
+        // ==========================================
+        function renderLightingMask() {
+            const rx = player.x - camera.x;
+            const ry = player.y - camera.y;
+
+            // Clear secondary lighting canvas
+            lightCtx.fillStyle = 'rgba(3, 3, 7, 0.975)'; // Dark pitch black shroud
+            lightCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Set blend mode to erase holes out of the dark shroud
+            lightCtx.globalCompositeOperation = 'destination-out';
+
+            // A. Draw Ambient Circle around player (reveals immediate surroundings)
+            const ambGrad = lightCtx.createRadialGradient(rx, ry, 0, rx, ry, player.ambientLightRadius);
+            ambGrad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+            ambGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.85)');
+            ambGrad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+            
+            lightCtx.fillStyle = ambGrad;
+            lightCtx.beginPath();
+            lightCtx.arc(rx, ry, player.ambientLightRadius, 0, Math.PI * 2);
+            lightCtx.fill();
+
+            // B. Draw Dynamic Flashlight Cone (Wedge)
+            if (player.battery > 0 && !player.isBatteryFlicker) {
+                const range = player.coneRange;
+                const angleSpread = player.coneAngle;
+
+                // Wedge coordinates math
+                const startAngle = player.angle - angleSpread / 2;
+                const endAngle = player.angle + angleSpread / 2;
+
+                const coneGrad = lightCtx.createRadialGradient(rx, ry, 5, rx, ry, range);
+                coneGrad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+                coneGrad.addColorStop(0.3, 'rgba(255, 255, 255, 0.95)');
+                coneGrad.addColorStop(0.75, 'rgba(255, 255, 255, 0.25)');
+                coneGrad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+
+                lightCtx.fillStyle = coneGrad;
+                lightCtx.beginPath();
+                lightCtx.moveTo(rx, ry);
+                lightCtx.lineTo(rx + Math.cos(startAngle) * range, ry + Math.sin(startAngle) * range);
+                lightCtx.arc(rx, ry, range, startAngle, endAngle);
+                lightCtx.closePath();
+                lightCtx.fill();
+
+                // Draw secondary softer scatter beam for realism
+                const softAngleSpread = angleSpread + 0.15;
+                const softRange = range * 0.82;
+                const softStartAngle = player.angle - softAngleSpread / 2;
+                const softEndAngle = player.angle + softAngleSpread / 2;
+
+                const softGrad = lightCtx.createRadialGradient(rx, ry, 5, rx, ry, softRange);
+                softGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+                softGrad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+                lightCtx.fillStyle = softGrad;
+                lightCtx.beginPath();
+                lightCtx.moveTo(rx, ry);
+                lightCtx.lineTo(rx + Math.cos(softStartAngle) * softRange, ry + Math.sin(softStartAngle) * softRange);
+                lightCtx.arc(rx, ry, softRange, softStartAngle, softEndAngle);
+                lightCtx.closePath();
+                lightCtx.fill();
+
+                // C. Render Volumetric light beams / dust shafts
+                lightCtx.strokeStyle = 'rgba(255, 255, 255, 0.035)';
+                lightCtx.lineWidth = 1.5;
+                for (let i = 0; i < 4; i++) {
+                    const rndAngle = player.angle + (Math.random() - 0.5) * angleSpread * 0.9;
+                    const rndLen = range * (0.4 + Math.random() * 0.55);
+                    lightCtx.beginPath();
+                    lightCtx.moveTo(rx, ry);
+                    lightCtx.lineTo(rx + Math.cos(rndAngle) * rndLen, ry + Math.sin(rndAngle) * rndLen);
+                    lightCtx.stroke();
+                }
+            }
+
+            // Restore normal composite operation to draw overlay
+            lightCtx.globalCompositeOperation = 'source-over';
+
+            // Draw the completed light shroud overlay onto primary canvas
+            ctx.drawImage(lightCanvas, 0, 0);
+        }
+
+        // ==========================================
+        // OFF-SCREEN HUD INDICATORS
+        // ==========================================
+        function drawOffscreenIndicators() {
+            const playerScreenX = player.x - camera.x;
+            const playerScreenY = player.y - camera.y;
+            const borderPadding = 30;
+
+            // 1. Battery Indicators (Neon Cyan)
+            batteries.forEach(battery => {
+                const rx = battery.x - camera.x;
+                const ry = battery.y - camera.y;
+
+                // Check if off-screen
+                if (rx < 0 || rx > canvas.width || ry < 0 || ry > canvas.height) {
+                    const dx = rx - playerScreenX;
+                    const dy = ry - playerScreenY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    // Only show indicator if battery is somewhat close
+                    if (dist < 1200) {
+                        const angle = Math.atan2(dy, dx);
+                        let ix = playerScreenX + Math.cos(angle) * dist;
+                        let iy = playerScreenY + Math.sin(angle) * dist;
+
+                        // Clamp coordinates to screen boundaries
+                        ix = Math.max(borderPadding, Math.min(canvas.width - borderPadding, ix));
+                        iy = Math.max(borderPadding, Math.min(canvas.height - borderPadding, iy));
+
+                        // Draw pulsing pointer triangle
+                        const pulse = Math.sin(gameTime * 8) * 4;
+                        ctx.save();
+                        ctx.translate(ix, iy);
+                        ctx.rotate(angle);
+
+                        ctx.shadowBlur = 8;
+                        ctx.shadowColor = '#00f0ff';
+                        ctx.fillStyle = '#00f0ff';
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(-12, -6);
+                        ctx.lineTo(-12, 6);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        // Battery Label "B"
+                        ctx.shadowBlur = 0;
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = 'bold 9px Courier New';
+                        ctx.fillText("B", -22 + pulse, 3);
+                        ctx.restore();
+                    }
+                }
+            });
+
+            // 2. Colossus Anomaly Alerts (Red warning)
+            enemies.forEach(enemy => {
+                if (enemy.type !== 'colossus') return;
+
+                const rx = enemy.x - camera.x;
+                const ry = enemy.y - camera.y;
+
+                if (rx < 0 || rx > canvas.width || ry < 0 || ry > canvas.height) {
+                    const dx = rx - playerScreenX;
+                    const dy = ry - playerScreenY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    const angle = Math.atan2(dy, dx);
+                    let ix = playerScreenX + Math.cos(angle) * dist;
+                    let iy = playerScreenY + Math.sin(angle) * dist;
+
+                    ix = Math.max(borderPadding, Math.min(canvas.width - borderPadding, ix));
+                    iy = Math.max(borderPadding, Math.min(canvas.height - borderPadding, iy));
+
+                    ctx.save();
+                    ctx.translate(ix, iy);
+                    ctx.rotate(angle);
+
+                    // Warning sign pulsing red
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#ff2a5f';
+                    ctx.fillStyle = '#ff2a5f';
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(-15, -8);
+                    ctx.lineTo(-15, 8);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 9px Courier New';
+                    ctx.fillText("BOSS", -42, 3);
+                    ctx.restore();
+                }
+            });
+        }
+
+        // ==========================================
+        // ENGINE HEARTBEAT LOOP
+        // ==========================================
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = Math.min(0.1, (timestamp - lastTime) / 1000); // cap to avoid huge frames during tab sleep
+            lastTime = timestamp;
+
+            update(dt);
+            draw();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start core loop
+        requestAnimationFrame(gameLoop);
+
+    </script>
+</body>
+</html>

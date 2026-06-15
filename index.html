@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade de Juegos de Bajos Recursos - Demos</title>
+    <style>
+        :root {
+            --bg-color: #0b0d19;
+            --text-color: #f1f3f9;
+            --primary-glow: 0 0 10px rgba(0, 242, 254, 0.5), 0 0 20px rgba(0, 242, 254, 0.2);
+            --font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(76, 0, 240, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(0, 242, 254, 0.15) 0px, transparent 50%);
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-align: center;
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: var(--primary-glow);
+            letter-spacing: -1px;
+        }
+
+        p.subtitle {
+            font-size: 1.1rem;
+            color: #8c9bb4;
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 50px;
+            line-height: 1.6;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .card {
+            background: rgba(25, 30, 56, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            backdrop-filter: blur(12px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.03), transparent);
+            pointer-events: none;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .card.code-cemetery {
+            border-bottom: 4px solid #00ff66;
+        }
+        .card.code-cemetery:hover {
+            box-shadow: 0 15px 35px rgba(0, 255, 102, 0.15), 0 0 20px rgba(0, 255, 102, 0.05);
+        }
+
+        .card.vector-edge {
+            border-bottom: 4px solid #00f2fe;
+        }
+        .card.vector-edge:hover {
+            box-shadow: 0 15px 35px rgba(0, 242, 254, 0.15), 0 0 20px rgba(0, 242, 254, 0.05);
+        }
+
+        .card.glitch-borne {
+            border-bottom: 4px solid #ff0055;
+        }
+        .card.glitch-borne:hover {
+            box-shadow: 0 15px 35px rgba(255, 0, 85, 0.15), 0 0 20px rgba(255, 0, 85, 0.05);
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            width: fit-content;
+            margin-bottom: 20px;
+        }
+
+        .code-cemetery .badge {
+            background-color: rgba(0, 255, 102, 0.15);
+            color: #00ff66;
+        }
+
+        .vector-edge .badge {
+            background-color: rgba(0, 242, 254, 0.15);
+            color: #00f2fe;
+        }
+
+        .glitch-borne .badge {
+            background-color: rgba(255, 0, 85, 0.15);
+            color: #ff0055;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            margin: 0 0 12px 0;
+            color: #ffffff;
+        }
+
+        .description {
+            font-size: 0.95rem;
+            color: #a0aec0;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            flex-grow: 1;
+        }
+
+        .features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 30px 0;
+            font-size: 0.85rem;
+            color: #cbd5e0;
+        }
+
+        .features li {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .features li::before {
+            content: "•";
+            margin-right: 8px;
+            font-weight: bold;
+        }
+        .code-cemetery .features li::before { color: #00ff66; }
+        .vector-edge .features li::before { color: #00f2fe; }
+        .glitch-borne .features li::before { color: #ff0055; }
+
+        .btn {
+            display: inline-block;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .code-cemetery .btn {
+            background-color: #00ff66;
+            color: #050b07;
+        }
+        .code-cemetery .btn:hover {
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+            transform: scale(1.02);
+        }
+
+        .vector-edge .btn {
+            background-color: #00f2fe;
+            color: #020912;
+        }
+        .vector-edge .btn:hover {
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+            transform: scale(1.02);
+        }
+
+        .glitch-borne .btn {
+            background-color: #ff0055;
+            color: #ffffff;
+        }
+        .glitch-borne .btn:hover {
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.4);
+            transform: scale(1.02);
+        }
+
+        .footer {
+            margin-top: 60px;
+            font-size: 0.85rem;
+            color: #5a6e85;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Arcade de Juegos Sin Assets</h1>
+    <p class="subtitle">
+        Prototipos interactivos de bajos recursos, renderizados completamente en tiempo real a través de código (HTML5 Canvas y Web Audio API).
+    </p>
+
+    <div class="grid">
+        <!-- CODE CEMETERY -->
+        <div class="card code-cemetery">
+            <div>
+                <span class="badge">ASCII SOULSLIKE</span>
+                <h2>Code_Cemetery</h2>
+                <p class="description">
+                    Estética de consola retro CRT. Lucha como un puntero de memoria en un sistema corrupto contra peligros lógicos en tiempo real.
+                </p>
+                <ul class="features">
+                    <li>Controles de esquiva (Hex Dodge) y Parry preciso.</li>
+                    <li>Restauración compilando memoria (Flasks).</li>
+                    <li>Jefe final Ø (Kernel Panic) con barreras dinámicas.</li>
+                    <li>Feedback sonoro textual simulado.</li>
+                </ul>
+            </div>
+            <a href="code_cemetery/index.html" target="_blank" class="btn">Iniciar Directiva</a>
+        </div>
+
+        <!-- VECTOR EDGE -->
+        <div class="card vector-edge">
+            <div>
+                <span class="badge">BEAT 'EM UP VECTORIAL</span>
+                <h2>Neon Slash: Vector Edge</h2>
+                <p class="description">
+                    Corta polígonos enemigos y mira cómo se dividen físicamente en tiempo real. Música de sintetizador generada por código.
+                </p>
+                <ul class="features">
+                    <li>Motor físico de corte de polígonos en vivo.</li>
+                    <li>Banda sonora synthwave procedimental.</li>
+                    <li>Movimiento de stickman procedural fluido.</li>
+                    <li>Botones del menú interactivos para cortar.</li>
+                </ul>
+            </div>
+            <a href="vector_edge/index.html" target="_blank" class="btn">Cargar Segmento</a>
+        </div>
+
+        <!-- GLITCH-BORNE -->
+        <div class="card glitch-borne">
+            <div>
+                <span class="badge">ROGUE-LITE DE SOMBRAS</span>
+                <h2>Glitch-borne</h2>
+                <p class="description">
+                    Supervivencia en un mundo de oscuridad extrema. Usa tu linterna física para quemar monstruos de estática digital y glitches.
+                </p>
+                <ul class="features">
+                    <li>Iluminación 2D y sombras dinámicas volumétricas.</li>
+                    <li>Comportamiento de enemigos sensible a la luz.</li>
+                    <li>Sistema de mejoras y nivelación estilo Rogue-lite.</li>
+                    <li>Audio sintetizado con osciladores y filtros.</li>
+                </ul>
+            </div>
+            <a href="glitch_borne/index.html" target="_blank" class="btn">Activar Faro</a>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Servidor Local Activo en Puerto 8000</p>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code_Cemetery: Vitt's Journey — v1.0.6</title>
+    <meta name="description" content="Un soulslike de terminal ASCII. Controla a Vitt, un puntero de 64 bits, en su misión de entregar el código de apagado seguro a la ALU antes del colapso eléctrico.">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:         #030508;
+            --green:      #00ff66;
+            --cyan:       #00f2fe;
+            --red:        #ff0055;
+            --dim-green:  rgba(0, 255, 102, 0.12);
+            --glow-green: 0 0 8px rgba(0, 255, 102, 0.6), 0 0 20px rgba(0, 255, 102, 0.2);
+            --glow-cyan:  0 0 8px rgba(0, 242, 254, 0.6), 0 0 20px rgba(0, 242, 254, 0.2);
+            --glow-red:   0 0 8px rgba(255, 0, 85, 0.6), 0 0 20px rgba(255, 0, 85, 0.2);
+            --mono:       'Courier Prime', 'Courier New', Courier, monospace;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #01030a;
+            font-family: var(--mono);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            background-image: radial-gradient(ellipse at center, #0a1020 0%, #01030a 100%);
+        }
+
+        /* ===== CRT CONTAINER — ESCALA RESPONSIVA ===== */
+        .crt-container {
+            position: relative;
+            /* Responsive: usa todo el espacio disponible manteniendo ratio 4:3 */
+            width:  min(98vw, 130.6vh);
+            height: min(73.5vw, 98vh);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid rgba(0, 255, 102, 0.3);
+            box-shadow:
+                0 0 0 1px rgba(0,0,0,0.8),
+                0 0 30px rgba(0, 255, 102, 0.08),
+                inset 0 0 60px rgba(0,0,0,0.5);
+        }
+
+        /* Scanline overlay */
+        .crt-container::after {
+            content: "";
+            display: block;
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.22) 50%),
+                linear-gradient(90deg, rgba(255,0,0,0.04), rgba(0,255,0,0.015), rgba(0,0,255,0.04));
+            background-size: 100% 3px, 4px 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Vignette */
+        .vignette {
+            position: absolute;
+            inset: 0;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+            pointer-events: none;
+            z-index: 11;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+        }
+
+        /* ===== OVERLAY PANELS ===== */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            padding: 0;
+            overflow: hidden;
+            font-family: var(--mono);
+        }
+
+        .hidden { display: none !important; }
+
+        /* Terminal window chrome */
+        .term-chrome {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+        }
+
+        .term-titlebar {
+            background: rgba(0, 255, 102, 0.07);
+            border-bottom: 1px solid rgba(0, 255, 102, 0.25);
+            padding: 6px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: rgba(0, 255, 102, 0.5);
+            flex-shrink: 0;
+        }
+
+        .term-titlebar .dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .dot-r { background: #ff5f56; }
+        .dot-y { background: #ffbd2e; }
+        .dot-g { background: #27c93f; }
+
+        .term-titlebar .title-text {
+            margin-left: 8px;
+            color: rgba(0, 255, 102, 0.7);
+            letter-spacing: 1px;
+        }
+
+        .term-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px 24px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        /* Scrollbar estilo terminal */
+        .term-body::-webkit-scrollbar { width: 4px; }
+        .term-body::-webkit-scrollbar-track { background: transparent; }
+        .term-body::-webkit-scrollbar-thumb { background: rgba(0,255,102,0.3); border-radius: 2px; }
+
+        /* Líneas de texto del terminal */
+        .tl { font-size: 0.82rem; line-height: 1.55; color: rgba(0,255,102,0.55); white-space: pre; }
+        .tl.g  { color: var(--green); }
+        .tl.c  { color: var(--cyan); }
+        .tl.r  { color: var(--red); }
+        .tl.w  { color: #e2e8f0; }
+        .tl.dim { color: rgba(0,255,102,0.3); }
+        .tl.sep { color: rgba(0,255,102,0.25); }
+        .tl.prompt { color: var(--green); text-shadow: var(--glow-green); }
+
+        /* Sección de instrucciones — tabla ASCII */
+        .tl-table {
+            font-size: 0.78rem;
+            line-height: 1.6;
+            color: #8ca0b8;
+            white-space: pre;
+        }
+        .tl-table .key { color: var(--cyan); font-weight: bold; }
+
+        /* Botón estilo prompt */
+        .cli-btn {
+            display: inline-block;
+            background: transparent;
+            color: var(--green);
+            font-family: var(--mono);
+            font-size: 0.88rem;
+            font-weight: bold;
+            padding: 8px 22px;
+            border: 1px solid var(--green);
+            border-radius: 2px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            text-shadow: var(--glow-green);
+            transition: background 0.1s, color 0.1s, box-shadow 0.1s;
+            margin-top: 4px;
+            position: relative;
+        }
+        .cli-btn::before { content: "$ "; opacity: 0.7; }
+        .cli-btn:hover {
+            background: var(--green);
+            color: #010508;
+            text-shadow: none;
+            box-shadow: var(--glow-green);
+        }
+        .cli-btn.red {
+            color: var(--red);
+            border-color: var(--red);
+            text-shadow: var(--glow-red);
+        }
+        .cli-btn.red:hover { background: var(--red); color: #010508; text-shadow: none; box-shadow: var(--glow-red); }
+        .cli-btn.cyan {
+            color: var(--cyan);
+            border-color: var(--cyan);
+            text-shadow: var(--glow-cyan);
+        }
+        .cli-btn.cyan:hover { background: var(--cyan); color: #010508; text-shadow: none; box-shadow: var(--glow-cyan); }
+
+        /* Cursor parpadeante */
+        @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+        .cursor { animation: blink 1s step-end infinite; }
+
+        /* Profile selector */
+        .gfx-selector {
+            display: flex;
+            gap: 20px;
+            margin-top: 4px;
+            align-items: center;
+        }
+        .gfx-selector label {
+            cursor: pointer;
+            color: #8ca0b8;
+            font-size: 0.78rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .gfx-selector label:hover { color: var(--green); }
+        .gfx-selector input[type=radio] { accent-color: var(--green); }
+
+        /* Alert flash */
+        .alert-flash {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 85, 0.2);
+            border: 1px solid var(--red);
+            color: #fff;
+            font-family: var(--mono);
+            font-size: 0.78rem;
+            padding: 7px 16px;
+            border-radius: 2px;
+            pointer-events: none;
+            z-index: 30;
+            opacity: 0;
+            transition: opacity 0.25s;
+            white-space: nowrap;
+            text-shadow: var(--glow-red);
+        }
+        .alert-flash.active { opacity: 1; }
+
+        /* Responsive font scaling */
+        @media (max-width: 700px) {
+            .tl, .tl-table { font-size: 0.65rem; }
+            .cli-btn { font-size: 0.72rem; padding: 6px 14px; }
+            .term-body { padding: 10px 14px 8px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="crt-container">
+        <div class="vignette"></div>
+        <div class="alert-flash" id="alertFlash">ERROR CRÍTICO DEL SISTEMA</div>
+
+        <!-- CANVAS -->
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <!-- ===================== PANTALLA DE INICIO ===================== -->
+        <div class="overlay" id="startScreen">
+            <div class="term-chrome">
+                <div class="term-titlebar">
+                    <span class="dot dot-r"></span>
+                    <span class="dot dot-y"></span>
+                    <span class="dot dot-g"></span>
+                    <span class="title-text">code_cemetery_v1.0.6 — /dev/tty0 — 80x30</span>
+                </div>
+                <div class="term-body" id="startTermBody">
+                    <div class="tl sep">╔══════════════════════════════════════════════════════════════════════════════╗</div>
+                    <div class="tl g" style="text-align:center; text-shadow: var(--glow-green);">
+  ██████╗ ██████╗ ██████╗ ███████╗     ██████╗███████╗███╗   ███╗███████╗████████╗███████╗██████╗ ██╗   ██╗
+ ██╔════╝██╔═══██╗██╔══██╗██╔════╝    ██╔════╝██╔════╝████╗ ████║██╔════╝╚══██╔══╝██╔════╝██╔══██╗╚██╗ ██╔╝
+ ██║     ██║   ██║██║  ██║█████╗      ██║     █████╗  ██╔████╔██║█████╗     ██║   █████╗  ██████╔╝ ╚████╔╝ 
+ ██║     ██║   ██║██║  ██║██╔══╝      ██║     ██╔══╝  ██║╚██╔╝██║██╔══╝    ██║   ██╔══╝  ██╔══██╗  ╚██╔╝  
+ ╚██████╗╚██████╔╝██████╔╝███████╗    ╚██████╗███████╗██║ ╚═╝ ██║███████╗  ██║   ███████╗██║  ██║   ██║   
+  ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝     ╚═════╝╚══════╝╚═╝     ╚═╝╚══════╝  ╚═╝   ╚══════╝╚═╝  ╚═╝   ╚═╝  
+                    </div>
+                    <div class="tl sep">╚══════════════════════════════════════════════════════════════════════════════╝</div>
+                    <div class="tl">&nbsp;</div>
+                    <div class="tl c">[SECTOR_LOG: SWAP_MEMORY_0xF00D] — INIT SEQUENCE</div>
+                    <div class="tl dim">────────────────────────────────────────────────────────────────────────────────</div>
+                    <div class="tl w">  El sistema sufre una <span style="color:var(--red); text-shadow:var(--glow-red)">MUERTE TÉRMICA</span> catastrófica. Voltaje decayendo.</div>
+                    <div class="tl w">  Controlas a <span style="color:var(--green); text-shadow:var(--glow-green)">Vitt (&amp;)</span>, puntero huérfano de 64-bits. Tu misión:</div>
+                    <div class="tl w">  Transportar <span style="color:var(--cyan); text-shadow:var(--glow-cyan)">Interrupt 0x00 / SIGTERM</span> desde RAM hasta la ALU.</div>
+                    <div class="tl">&nbsp;</div>
+                    <div class="tl dim">────────────────────────────────────────────────────────────────────────────────</div>
+                    <div class="tl c">$ help --controls</div>
+                    <div class="tl dim">────────────────────────────────────────────────────────────────────────────────</div>
+                    <div class="tl-table">  <span class="key">TECLA</span>   FUNCIÓN                       <span class="key">MECÁNICA</span>
+  ─────── ─────────────────────────     ──────────────────────────────────────
+  <span class="key">W A S D</span> Mover a Vitt (&amp;)              Tile-based, colisión vs. paredes #
+  <span class="key">J</span>       Logic-Slash (ataque)          Corto alcance, corta latencia
+  <span class="key">K</span>       Parry / Bloqueo               Pulsar=Parry perfecto, Mantener=Bloqueo
+  <span class="key">L</span>       Hex-Dodge (esquiva)           3 celdas + invulnerabilidad total
+  <span class="key">U</span>       Cifrado (sigilo)              Invisible; gasta CPU/seg
+  <span class="key">I</span>       Bitflip (inversión de bits)   Aturde enemigos, invierte proyectiles
+  <span class="key">O</span>       Overflow (blast radial)       Gasta toda la CPU; aturde en radio
+  <span class="key">P</span>       Cache Prefetch (teletransporte) 6 celdas; invulnerable + daño en trayecto
+  <span class="key">E</span>       Interactuar con NPC           Dialogar / Avanzar diálogo
+  ─────── ─────────────────────────     ──────────────────────────────────────</div>
+                    <div class="tl">&nbsp;</div>
+                    <div class="tl c">[SANDBOX_CONFIG: DEVEL_MODE=1]</div>
+                    <div class="tl-table">  <span class="key">G</span>  Alternar Modo Dios (inmortal)    <span class="key">1</span> Daemon   <span class="key">2</span> Leak   <span class="key">3</span> NullPtr   <span class="key">4</span> Golem</div>
+                    <div class="tl">&nbsp;</div>
+                    <div class="tl dim">────────────────────────────────────────────────────────────────────────────────</div>
+                    <div class="tl c">$ graphics --profile:</div>
+                    <div class="tl" style="margin-top:4px;">
+                        <div class="gfx-selector">
+                            <label><input type="radio" name="gfxProfile" value="high" checked> <span style="color:var(--green)">▸ High</span> — CRT aberración cromática + vibración + partículas</label>
+                            <label><input type="radio" name="gfxProfile" value="low"> <span style="color:var(--cyan)">▸ Low</span>  — Alto rendimiento, gama baja</label>
+                        </div>
+                    </div>
+                    <div class="tl">&nbsp;</div>
+                    <div style="display:flex; align-items:center; gap:16px; padding: 4px 0;">
+                        <button class="cli-btn" id="startBtn">vitt --initialize<span class="cursor">▋</span></button>
+                        <span class="tl dim" style="font-size:0.72rem;">[ Nivel 1: SWAP_Space — ~10 min ]</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== GAME OVER ===================== -->
+        <div class="overlay hidden" id="gameOverScreen">
+            <div class="term-chrome">
+                <div class="term-titlebar">
+                    <span class="dot dot-r"></span>
+                    <span class="dot dot-y"></span>
+                    <span class="dot dot-g"></span>
+                    <span class="title-text" style="color:rgba(255,0,85,0.7)">KERNEL_PANIC — /dev/tty0 — CORE DUMPED</span>
+                </div>
+                <div class="term-body" style="justify-content:center; align-items:flex-start;">
+                    <div class="tl r" style="font-size:1.2rem; text-shadow:var(--glow-red); margin-bottom:10px;">[ KERNEL PANIC: CORE DUMPED ]</div>
+                    <div class="tl dim">────────────────────────────────────────────────────────────────</div>
+                    <div class="tl">&nbsp;</div>
+                    <div class="tl-table">  [EXCEPTION: SEGFAULT — EIP: 0x00000000 — ERRNO: 139]
+  
+  Tu dirección física fue liberada por el Garbage Collector.
+  Vitt ha dejado un archivo Core Dump en el sector del colapso.
+  
+  Si reinicias el hilo y mueres de nuevo en el trayecto,
+  esos bits se perderán para siempre en el éter del storage.
+  
+  Integrity final: 0x00  /  CPU Cycles: 0x00
+  
+  &gt; Examinando volcado de pila...
+  &gt; Stack trace: NULL_POINTER → SEGFAULT → PROCESS_KILLED
+  &gt; Última dirección válida: 0xDEADBEEF</div>
+                    <div class="tl">&nbsp;</div>
+                    <div class="tl dim">────────────────────────────────────────────────────────────────</div>
+                    <div class="tl">&nbsp;</div>
+                    <button class="cli-btn red" id="restartBtn">vitt --reboot<span class="cursor">▋</span></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== VICTORIA ===================== -->
+        <div class="overlay hidden" id="victoryScreen">
+            <div class="term-chrome">
+                <div class="term-titlebar">
+                    <span class="dot dot-r"></span>
+                    <span class="dot dot-y"></span>
+                    <span class="dot dot-g"></span>
+                    <span class="title-text" style="color:rgba(0,242,254,0.7)">SIGTERM_SUCCESS — /dev/tty0 — SHUTDOWN OK</span>
+                </div>
+                <div class="term-body" style="justify-content:center; align-items:flex-start;">
+                    <div class="tl c" style="font-size:1.2rem; text-shadow:var(--glow-cyan); margin-bottom:10px;">[ SUCCESS: SHUTDOWN COMPLETE (0x00) ]</div>
+                    <div class="tl dim">────────────────────────────────────────────────────────────────</div>
+                    <div class="tl">&nbsp;</div>
+                    <div class="tl-table">  [PROCESS: SIGTERM_PROCESSOR — PID: 0x4200 — STATUS: OK]
+  
+  ¡Vitt ha alcanzado la ALU! El registro acumulador
+  procesó la interrupción segura del núcleo.
+  
+  El sistema se ha apagado ordenadamente.
+  Daños estructurales: NINGUNO
+  Integridad de datos: PRESERVADA
+  
+  &gt; Almacenando copia de Vitt II en ROM de arranque...
+  &gt; Guardando estado de misión en EEPROM sector 0x3F...
+  &gt; Sistema apagado. Hasta el próximo boot.</div>
+                    <div class="tl">&nbsp;</div>
+                    <div class="tl dim">────────────────────────────────────────────────────────────────</div>
+                    <div class="tl">&nbsp;</div>
+                    <button class="cli-btn cyan" id="victoryBtn">shutdown -r now<span class="cursor">▋</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="src/audio.js"></script>
+    <script src="src/engine.js"></script>
+    <script src="src/vitt.js"></script>
+    <script src="src/enemies.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const startScreen   = document.getElementById('startScreen');
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            const victoryScreen  = document.getElementById('victoryScreen');
+            const startBtn   = document.getElementById('startBtn');
+            const restartBtn = document.getElementById('restartBtn');
+            const victoryBtn = document.getElementById('victoryBtn');
+            const alertFlash = document.getElementById('alertFlash');
+
+            // Flash overlay messages
+            window.flashAlert = function(text, color) {
+                alertFlash.textContent = text;
+                alertFlash.style.background  = color === 'red'  ? 'rgba(255, 0, 85, 0.25)' : 'rgba(0, 242, 254, 0.2)';
+                alertFlash.style.borderColor = color === 'red'  ? 'var(--red)' : 'var(--cyan)';
+                alertFlash.style.color       = '#ffffff';
+                alertFlash.classList.add('active');
+                setTimeout(() => alertFlash.classList.remove('active'), 2200);
+            };
+
+            function initGame() {
+                // Boot audio & engine
+                window.GameAudio.init();
+                window.GameAudio.playBGM();
+                window.GameEngine.init('gameCanvas');
+                window.Vitt.init();
+
+                // Player defaults
+                window.Vitt.integrity    = 100;
+                window.Vitt.maxIntegrity = 100;
+                window.Vitt.godMode      = true; // God Mode activado por defecto para sandbox
+
+                // Game state
+                window.activeEnemies      = [];
+                window.activeSlashes      = [];
+                window.activeProjectiles  = [];
+                window.activeCollectibles = [];
+                window.collectedBits = { bit1: false, bit3: false, bit5: false, bit7: false };
+
+                // === Spawn Nivel 1: SWAP Space NPCs ===
+                window.Enemies.spawnOracle(180, 100);
+                window.Enemies.spawnBit0(100, 140);
+                window.Enemies.spawnByte0xAA(440, 220);
+                window.Enemies.spawnSpindleGolem(650, 290);
+
+                // Enemigos básicos para llenar el espacio
+                window.Enemies.spawnDaemon(320, 140);
+                window.Enemies.spawnLeak(480, 380);
+                window.Enemies.spawnNullPointer(240, 280);
+
+                // === Sandbox debug keys ===
+                window.addEventListener('keydown', (e) => {
+                    const key = e.key.toLowerCase();
+                    if (key === 'g') {
+                        window.Vitt.godMode = !window.Vitt.godMode;
+                        window.flashAlert(window.Vitt.godMode ? 'MODO DIOS: ACTIVO' : 'MODO DIOS: INACTIVO',
+                                          window.Vitt.godMode ? 'cyan' : 'red');
+                        if (window.GameAudio?.playParry) window.GameAudio.playParry();
+                    }
+                    if (key === '1') {
+                        const rx = 150 + Math.random() * 500, ry = 100 + Math.random() * 400;
+                        window.Enemies.spawnDaemon(rx, ry);
+                        window.flashAlert('Invocado: Daemon Thread (&)', 'cyan');
+                    }
+                    if (key === '2') {
+                        const rx = 150 + Math.random() * 500, ry = 100 + Math.random() * 400;
+                        window.Enemies.spawnLeak(rx, ry);
+                        window.flashAlert('Invocado: Memory Leak (~)', 'cyan');
+                    }
+                    if (key === '3') {
+                        const rx = 150 + Math.random() * 500, ry = 100 + Math.random() * 400;
+                        window.Enemies.spawnNullPointer(rx, ry);
+                        window.flashAlert('Invocado: Null Pointer (Ø)', 'cyan');
+                    }
+                    if (key === '4') {
+                        window.Enemies.spawnSpindleGolem(650, 290);
+                        window.flashAlert('Invocado: Golem del Cabezal [SPINDLE]', 'red');
+                    }
+                });
+
+                window.flashAlert('SANDBOX: Modo Dios ACTIVO [G]. Invocar: [1,2,3,4]', 'cyan');
+                window.GameEngine.start();
+            }
+
+            window.graphicsProfile = 'high';
+
+            startBtn.addEventListener('click', () => {
+                const gfx = document.querySelector('input[name="gfxProfile"]:checked');
+                if (gfx) window.graphicsProfile = gfx.value;
+                startScreen.classList.add('hidden');
+                initGame();
+            });
+
+            restartBtn.addEventListener('click', () => location.reload());
+            victoryBtn.addEventListener('click', () => location.reload());
+
+            window.triggerGameOver = function() {
+                if (window.GameAudio?.stopBGM)  window.GameAudio.stopBGM();
+                if (window.GameAudio?.playDeath) window.GameAudio.playDeath();
+                gameOverScreen.classList.remove('hidden');
+            };
+
+            window.triggerVictory = function() {
+                if (window.GameAudio?.stopBGM)    window.GameAudio.stopBGM();
+                if (window.GameAudio?.playLevelUp) window.GameAudio.playLevelUp();
+                victoryScreen.classList.remove('hidden');
+            };
+        });
+    </script>
+</body>
+</html>
