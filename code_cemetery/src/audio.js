@@ -68,7 +68,7 @@ window.GameAudio = {
 
     playCodeBeep() {
         const c = initContext();
-        if (!c) return;
+        if (!c || c.state === 'suspended') return;
         const now = c.currentTime;
         try {
             const osc = c.createOscillator();

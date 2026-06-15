@@ -57,7 +57,7 @@
                 linear-gradient(90deg, rgba(255,0,0,0.04), rgba(0,255,0,0.015), rgba(0,0,255,0.04));
             background-size: 100% 3px, 4px 100%;
             pointer-events: none;
-            z-index: 10;
+            z-index: 90;
         }
 
         .vignette {
@@ -65,7 +65,7 @@
             inset: 0;
             box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
             pointer-events: none;
-            z-index: 11;
+            z-index: 91;
         }
 
         canvas {
@@ -87,6 +87,10 @@
             z-index: 20;
             overflow: hidden;
             font-family: var(--mono);
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: none;
+            font-smooth: never;
+            text-rendering: optimizeSpeed;
         }
 
         .hidden { display: none !important; }
@@ -111,7 +115,7 @@
             flex-shrink: 0;
         }
 
-        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .dot { width: 10px; height: 10px; border-radius: 0; display: inline-block; }
         .dot-r { background: #ff5f56; }
         .dot-y { background: #ffbd2e; }
         .dot-g { background: #27c93f; }
@@ -132,7 +136,7 @@
 
         .term-body::-webkit-scrollbar { width: 4px; }
         .term-body::-webkit-scrollbar-track { background: transparent; }
-        .term-body::-webkit-scrollbar-thumb { background: rgba(0,255,102,0.3); border-radius: 2px; }
+        .term-body::-webkit-scrollbar-thumb { background: rgba(0,255,102,0.3); border-radius: 0; }
 
         .tl { font-size: 0.82rem; line-height: 1.55; color: rgba(0,255,102,0.55); white-space: pre; }
         .tl.g  { color: var(--green); }
@@ -157,12 +161,15 @@
             font-weight: bold;
             padding: 8px 22px;
             border: 1px solid var(--green);
-            border-radius: 2px;
+            border-radius: 0px;
             cursor: pointer;
             letter-spacing: 1px;
             text-shadow: var(--glow-green);
-            transition: background 0.1s, color 0.1s, box-shadow 0.1s;
+            transition: none;
             margin-top: 4px;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: none;
+            font-smooth: never;
         }
         .cli-btn::before { content: "$ "; opacity: 0.7; }
         .cli-btn:hover { background: var(--green); color: #010508; text-shadow: none; box-shadow: var(--glow-green); }
@@ -170,11 +177,47 @@
         .cli-btn.red:hover { background: var(--red); color: #010508; text-shadow: none; box-shadow: var(--glow-red); }
         .cli-btn.cyan { color: var(--cyan); border-color: var(--cyan); text-shadow: var(--glow-cyan); }
         .cli-btn.cyan:hover { background: var(--cyan); color: #010508; text-shadow: none; box-shadow: var(--glow-cyan); }
+        .cli-btn.secondary { color: rgba(0, 255, 102, 0.6); border-color: rgba(0, 255, 102, 0.4); text-shadow: none; }
+        .cli-btn.secondary:hover { background: rgba(0, 255, 102, 0.15); color: var(--green); box-shadow: none; }
 
         .gfx-selector { display: flex; gap: 20px; margin-top: 4px; align-items: center; }
-        .gfx-selector label { cursor: pointer; color: #8ca0b8; font-size: 0.78rem; display: flex; align-items: center; gap: 6px; }
+        .gfx-selector label {
+            cursor: pointer;
+            color: #8ca0b8;
+            font-size: 0.78rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: none;
+            font-smooth: never;
+        }
         .gfx-selector label:hover { color: var(--green); }
-        .gfx-selector input[type=radio] { accent-color: var(--green); }
+        .gfx-selector input[type=radio] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border: 1px solid rgba(0, 255, 102, 0.4);
+            border-radius: 0;
+            background: transparent;
+            margin: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+        }
+        .gfx-selector input[type=radio]:checked {
+            border-color: var(--green);
+        }
+        .gfx-selector input[type=radio]:checked::before {
+            content: "■";
+            font-size: 8px;
+            color: var(--green);
+            display: block;
+            line-height: 1;
+        }
 
         .alert-flash {
             position: absolute;
@@ -217,7 +260,7 @@
             right: 18px;
             font-family: var(--mono);
             font-size: 0.62rem;
-            color: rgba(0, 255, 102, 0.25);
+            color: rgba(0, 255, 102, 0.33);
             pointer-events: none;
             z-index: 5;
             letter-spacing: 1px;
@@ -254,44 +297,38 @@
                 </div>
                 <div class="term-body">
                     <div class="tl sep">╔══════════════════════════════════════════════════════════════════════════════╗</div>
-                    <div class="tl g" style="text-align:center; text-shadow: var(--glow-green); font-size:0.58rem; line-height:1.3">
-  ██████╗ ██████╗ ██████╗ ███████╗     ██████╗███████╗███╗   ███╗███████╗████████╗███████╗██████╗ ██╗   ██╗
- ██╔════╝██╔═══██╗██╔══██╗██╔════╝    ██╔════╝██╔════╝████╗ ████║██╔════╝╚══██╔══╝██╔════╝██╔══██╗╚██╗ ██╔╝
- ██║     ██║   ██║██║  ██║█████╗      ██║     █████╗  ██╔████╔██║█████╗     ██║   █████╗  ██████╔╝ ╚████╔╝
- ██║     ██║   ██║██║  ██║██╔══╝      ██║     ██╔══╝  ██║╚██╔╝██║██╔══╝    ██║   ██╔══╝  ██╔══██╗  ╚██╔╝
- ╚██████╗╚██████╔╝██████╔╝███████╗    ╚██████╗███████╗██║ ╚═╝ ██║███████╗  ██║   ███████╗██║  ██║   ██║
-  ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝     ╚═════╝╚══════╝╚═╝     ╚═╝╚══════╝  ╚═╝   ╚══════╝╚═╝  ╚═╝   ╚═╝
+                    <div class="tl g" style="text-shadow: var(--glow-green); font-size:0.82rem; line-height:1.1;">
+                       ██████╗ ██████╗ ██████╗ ███████╗
+                      ██╔════╝██╔═══██╗██╔══██╗██╔════╝
+                      ██║     ██║   ██║██║  ██║█████╗  
+                      ██║     ██║   ██║██║  ██║██╔══╝  
+                      ╚██████╗╚██████╔╝██████╔╝███████╗
+                       ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
+     ██████╗███████╗███╗   ███╗███████╗████████╗███████╗██████╗ ██╗   ██╗
+    ██╔════╝██╔════╝████╗ ████║██╔════╝╚══██╔══╝██╔════╝██╔══██╗╚██╗ ██╔╝
+    ██║     █████╗  ██╔████╔██║█████╗     ██║   █████╗  ██████╔╝ ╚████╔╝
+    ██║     ██╔══╝  ██║╚██╔╝██║██╔══╝     ██║   ██╔══╝  ██╔══██╗  ╚██╔╝ 
+    ╚██████╗███████╗██║ ╚═╝ ██║███████╗   ██║   ███████╗██║  ██║   ██║  
+     ╚═════╝╚══════╝╚═╝     ╚═╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝   ██║  
+                                                                   ╚═╝  
                     </div>
                     <div class="tl sep">╚══════════════════════════════════════════════════════════════════════════════╝</div>
                     <div class="tl">&nbsp;</div>
-                    <div class="tl c">[SECTOR_LOG: SWAP_MEMORY_0xF00D]  Temperatura: 143°C  Tiempo restante: 8 min</div>
+                    <div class="tl">[SECTOR_LOG: SWAP_MEMORY_0xF00D]  Temperatura: 103°C  Tiempo restante: 2S¨° min</div>
                     <div class="tl dim">────────────────────────────────────────────────────────────────────────────────</div>
-                    <div class="tl c">$ help --controls</div>
-                    <div class="tl-table">  <span class="key">TECLA</span>   FUNCIÓN                       <span class="key">MECÁNICA</span>
-  ─────── ─────────────────────────     ──────────────────────────────────────
-  <span class="key">W A S D</span> Mover a Vitt (&amp;)              Tile-based, colisión vs. paredes #
-  <span class="key">J</span>       Logic-Slash (ataque)          Corto alcance, corta latencia
-  <span class="key">K</span>       Parry / Bloqueo               Pulsar=Parry perfecto, Mantener=Bloqueo
-  <span class="key">L</span>       Hex-Dodge (esquiva)           3 celdas + invulnerabilidad total
-  <span class="key">U</span>       Cifrado (sigilo)              Invisible; gasta CPU/seg
-  <span class="key">I</span>       Bitflip (inversión de bits)   Aturde enemigos, invierte proyectiles
-  <span class="key">O</span>       Overflow (blast radial)       Gasta toda la CPU; aturde en radio
-  <span class="key">P</span>       Cache Prefetch (teletransporte) 6 celdas; invulnerable + daño en trayecto
-  <span class="key">E</span>       Interactuar con NPC           Dialogar / Avanzar diálogo
-  ─────── ─────────────────────────     ──────────────────────────────────────</div>
                     <div class="tl">&nbsp;</div>
-                    <div class="tl c">$ graphics --profile:</div>
+                    <div class="tl">$ graphics --profile:</div>
                     <div class="tl" style="margin-top:4px;">
                         <div class="gfx-selector">
                             <label><input type="radio" name="gfxProfile" value="high" checked> <span style="color:var(--green)">▸ High</span> — CRT + vibración + partículas</label>
-                            <label><input type="radio" name="gfxProfile" value="low"> <span style="color:var(--cyan)">▸ Low</span>  — Sin efectos, máximo rendimiento</label>
+                            <label><input type="radio" name="gfxProfile" value="low"> <span style="color:rgba(0, 255, 102, 0.7)">▸ Low</span>  — Sin efectos, máximo rendimiento</label>
                         </div>
                     </div>
                     <div class="tl">&nbsp;</div>
                     <div style="display:flex; align-items:center; gap:16px; padding: 4px 0;">
-                        <button class="cli-btn" id="startBtn">vitt --initialize<span class="cursor">▋</span></button>
-                        <span class="tl dim" style="font-size:0.72rem;">[ Nivel 1: SWAP_Space — ~10 min ]</span>
-                        <button class="cli-btn cyan" id="replayCineBtn" style="font-size:0.7rem; padding:6px 14px;">ver intro de nuevo</button>
+                        <button class="cli-btn" id="startBtn">vitt --inicializar<span class="cursor">▋</span></button>
+                        <span class="tl dim" style="font-size:0.72rem;">[ Nivel 1: SWAP_Space — ~2S¨° min ]</span>
+                        <button class="cli-btn secondary" id="replayCineBtn" style="font-size:0.7rem; padding:6px 14px;">ver intro de nuevo</button>
                     </div>
                 </div>
             </div>
@@ -302,7 +339,7 @@
             <div class="term-chrome">
                 <div class="term-titlebar">
                     <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
-                    <span class="title-text" style="color:rgba(255,0,85,0.7)">KERNEL_PANIC — /dev/tty0 — CORE DUMPED</span>
+                    <span class="title-text" style="color:rgba(255,0,85,0.7)">KERNEL_PANIC — /boot/mdx/logs/log421.log — CORE DUMPED</span>
                 </div>
                 <div class="term-body" style="justify-content:center;">
                     <div class="tl r" style="font-size:1.2rem; text-shadow:var(--glow-red); margin-bottom:10px;">[ KERNEL PANIC: CORE DUMPED ]</div>
@@ -332,7 +369,7 @@
             <div class="term-chrome">
                 <div class="term-titlebar">
                     <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
-                    <span class="title-text" style="color:rgba(0,242,254,0.7)">SIGTERM_SUCCESS — /dev/tty0 — SHUTDOWN OK</span>
+                    <span class="title-text" style="color:rgba(0,242,254,0.7)">SIGTERM_SUCCESS — /boot/mdx/logs/log421.log — SHUTDOWN OK</span>
                 </div>
                 <div class="term-body" style="justify-content:center;">
                     <div class="tl c" style="font-size:1.2rem; text-shadow:var(--glow-cyan); margin-bottom:10px;">[ SUCCESS: SHUTDOWN COMPLETE (0x00) ]</div>
@@ -397,17 +434,17 @@
                 tagColor: P.g,
                 lines: [
                     { t:    0, text: 'Iniciando Power-On Self-Test (POST)...',          col: P.g  },
-                    { t:  550, text: '  CPU: Intel Core i9-13900K  . . . . . . .  OK   98°C', col: P.g  },
-                    { t:  950, text: '  RAM: 64 GB DDR5-6000  . . . . . . . . . .  OK',  col: P.g  },
-                    { t: 1280, text: '  NVMe SSD 4 TB  . . . . . . . . . . . . . .  OK',  col: P.g  },
+                    { t:  550, text: '  CPU: Intel Core i3-10400f  . . . . . . .  OK   89°C', col: P.g  },
+                    { t:  950, text: '  RAM: 8 GB DDR4-3200  . . . . . . . . . .  OK',  col: P.g  },
+                    { t: 1280, text: '  NVMe SSD 120 GB  . . . . . . . . . . . . . .  OK',  col: P.g  },
                     { t: 1600, text: '  Sistema de refrigeración líquida  . . . .  [ verificando... ]', col: P.g },
-                    { t: 2200, text: '  Sistema de refrigeración líquida  . . . .  [!! FALLO CRÍTICO !!]', col: P.r },
+                    { t: 2200, text: '  Sistema de refrigeración líquida  . . . .  [!! CRITIC FAIL !!]', col: P.r },
                     { t: 2700, text: '', col: P.g },
-                    { t: 2900, text: '⚠  TEMPERATURA CPU: 127°C → 143°C → ???',    col: P.o  },
+                    { t: 2900, text: '⚠  TEMPERATURA CPU: 107°C → 113°C → ???',    col: P.o  },
                     { t: 3500, text: '⚠  Bomba de refrigeración: SIN RESPUESTA',   col: P.r  },
                     { t: 4000, text: '⚠  Protocolo de apagado de emergencia: SIN RESPUESTA', col: P.r },
                     { t: 4600, text: '', col: P.g },
-                    { t: 4800, text: '   DAÑO PERMANENTE AL SILICIO EN:  ~8 MINUTOS', col: P.r, big: false },
+                    { t: 4800, text: '   DAÑO PERMANENTE AL SILICIO EN:  ~*?¬ MINUTOS', col: P.r, big: false },
                 ],
                 hold: Infinity
             },
@@ -445,15 +482,15 @@
                     { t: 1100, text: '         [ &VITT — Puntero de datos, serie 64-bit ]', col: P.dim },
                     { t: 1600, text: '', col: P.g },
                     { t: 1900, text: '  No recuerdo nada.', col: P.w },
-                    { t: 2700, text: '  Solo sé que existo.', col: P.w },
+                    { t: 2700, text: '  Solo sé que hace mucho calor.', col: P.w },
                     { t: 3400, text: '  Y que cargo algo importante conmigo.', col: P.w },
                     { t: 4200, text: '', col: P.g },
-                    { t: 4500, text: '  Una señal. Una interrupción.', col: P.c },
-                    { t: 5200, text: '  Interrupt 0x00 — El apagado seguro del sistema.', col: P.c },
+                    { t: 4500, text: '  Una señal... Una interrupción?.', col: P.c },
+                    { t: 5200, text: '  Interrupt 0x00 — Apagado seguro del sistema.', col: P.c },
                     { t: 6000, text: '', col: P.g },
-                    { t: 6300, text: '  Si llego a la ALU... puedo salvar todo esto.', col: P.w },
-                    { t: 7100, text: '  Si no llego... el silicio se derrite.', col: P.o },
-                    { t: 7800, text: '  Y todo lo que existe aquí dentro desaparece.', col: P.r },
+                    { t: 6300, text: '  Si llego hasta el nucleo... puedo salvar todo esto.', col: P.w },
+                    { t: 7100, text: '  Si no llego... el silicio se derretirá.', col: P.o },
+                    { t: 7800, text: '  Y todo desaparecerá.', col: P.r },
                 ],
                 hold: Infinity
             },
@@ -466,7 +503,7 @@
                     { t:    0, text: '  ╔══════════════════════════════════════════════════╗', col: P.g },
                     { t:  200, text: '  ║     NIVEL 1:  SWAP SPACE — Sector 0xF00D        ║', col: P.g },
                     { t:  400, text: '  ╠══════════════════════════════════════════════════╣', col: P.g },
-                    { t:  600, text: '  ║  TEMP ACTUAL: 143°C  ↑    TIEMPO RESTANTE: 8m  ║', col: P.o },
+                    { t:  600, text: '  ║  TEMP ACTUAL: 123°C  ↑    TIEMPO RESTANTE: ~*?¬m  ║', col: P.o },
                     { t:  800, text: '  ╚══════════════════════════════════════════════════╝', col: P.g },
                     { t: 1100, text: '', col: P.g },
                     { t: 1300, text: '  MISIÓN PRINCIPAL:', col: P.c },
@@ -474,13 +511,13 @@
                     { t: 2200, text: '  ► Eliminar al Golem del Cabezal (guardián de zona)', col: P.w },
                     { t: 2700, text: '', col: P.g },
                     { t: 2900, text: '  MISIONES SECUNDARIAS [OPCIONALES]:', col: P.c },
-                    { t: 3300, text: '  ◌  Escoltar a Bit-0 de vuelta a su celda de memoria', col: P.dim },
-                    { t: 3750, text: '  ◌  Reconstruir el Byte-0xAA para desbloquear el portal', col: P.dim },
+                    { t: 3300, text: '  ◌  Escoltar a Bit-0 de vuelta a su ^?=#`', col: P.dim },
+                    { t: 3750, text: '  ◌  Reconstruir el B7t3 ¨*SA%$* para desbloquear el portal', col: P.dim },
                     { t: 4200, text: '', col: P.g },
                     { t: 4400, text: '  AMENAZAS DETECTADAS:', col: P.r },
                     { t: 4800, text: '  ● Daemon Thread (&)  — Agresivo, ataca en cadena', col: P.o },
-                    { t: 5150, text: '  ● Memory Leak (~)   — Deja rastro corrosivo al moverse', col: P.o },
-                    { t: 5500, text: '  ● Null Pointer (Ø)  — Dispara proyectiles de datos nulos', col: P.o },
+                    { t: 5150, text: '  ● Memory Leak (~)   — Deja ^?=#^?=#^?=# al moverse', col: P.o },
+                    { t: 5500, text: '  ● Null Pointer (Ø)  — Dispara ~*?^?=#  ¬^?=#~*?¬', col: P.o },
                     { t: 5900, text: '  ★ GOLEM DEL CABEZAL — Jefe de zona. Usa los CARRILES.', col: P.r },
                 ],
                 hold: Infinity
@@ -491,21 +528,11 @@
                 tag:      '[SECTOR_LOG: CARGA_COMPLETA — INICIANDO]',
                 tagColor: P.g,
                 lines: [
-                    { t:    0, text: '  CONTROLES ESENCIALES:', col: P.c },
-                    { t:  400, text: '  W A S D    Mover          J    Atacar (Logic-Slash)', col: P.w },
-                    { t:  800, text: '  K          Parry/Bloqueo  L    Esquivar (invulnerable)', col: P.w },
-                    { t: 1200, text: '  P          Teleportación  E    Hablar con NPC', col: P.w },
-                    { t: 1700, text: '', col: P.g },
-                    { t: 1950, text: '  ─────────────────────────────────────────────────────', col: P.sep },
-                    { t: 2200, text: '  CONSEJO:  El PARRY [K] en el instante justo lo cambia todo.', col: P.g },
-                    { t: 2900, text: '  CONSEJO:  Esquivar con [L] te da frames de invulnerabilidad.', col: P.g },
-                    { t: 3600, text: '  CONSEJO:  Habla con los NPCs (E). Tienen información vital.', col: P.g },
-                    { t: 4300, text: '', col: P.g },
-                    { t: 4600, text: '  &Vitt, el sistema depende de ti.', col: P.c },
-                    { t: 5200, text: '  No falles.', col: P.r },
-                    { t: 5900, text: '', col: P.g },
-                    { t: 6200, text: '  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', col: P.sep },
-                    { t: 6500, text: '  [  ESPACIO · ENTER · CLICK  →  comenzar  ]', col: P.y, blink: true },
+                    { t:    0, text: '  &Vitt, el sistema depende de ti.', col: P.c },
+                    { t:  400, text: '  No falles.', col: P.r },
+                    { t:  800, text: '', col: P.g },
+                    { t: 1200, text: '  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', col: P.sep },
+                    { t: 1300, text: '  [  ESPACIO · ENTER · CLICK  →  comenzar  ]', col: P.y, blink: true },
                 ],
                 hold: Infinity
             }
@@ -638,8 +665,14 @@
             if (typeLine !== null) {
                 const toAdd = Math.floor((ms - typeLine.lastCharMs) / typeLine.charSpd);
                 if (toAdd > 0) {
+                    const oldChars = typeLine.charsDone;
                     typeLine.charsDone = Math.min(typeLine.text.length, typeLine.charsDone + toAdd);
                     typeLine.lastCharMs += toAdd * typeLine.charSpd;
+                    if (typeLine.charsDone > oldChars && typeLine.charsDone < typeLine.text.length) {
+                        if (window.GameAudio && typeof window.GameAudio.playCodeBeep === 'function') {
+                            window.GameAudio.playCodeBeep();
+                        }
+                    }
                     if (typeLine.charsDone >= typeLine.text.length) {
                         drawnLines.push({ ...typeLine });
                         typeLine = null;
@@ -882,88 +915,58 @@
 
             // 6. Spawn entities based on levelNum
             if (levelNum === 0) {
-                // Segment 1: Movement check
-                window.Enemies.spawnTutorialGuide(160, 100, '?', 'PT_Guia_Mover', [
+                // Movement check
+                window.Enemies.spawnTutorialGuide(60, 100, '?', 'PT_Guia_Mover', [
                     "Guia de Movimiento: ¡Vitt! Has despertado como un puntero de 64 bits.",
-                    "Usa [W][A][S][D] (o flechas de direccion) para moverte por el bus.",
-                    "Sigue el camino hacia la derecha."
+                    "Usa [W][A][S][D] para moverte por el bus de datos.",
+                    "Sigue el camino hacia la derecha y busca la forma de avanzar."
                 ]);
 
-                // Segment 2: Logic-Slash [J] check
+                // Slash check
                 window.Enemies.spawnTutorialGuide(260, 100, 'i', 'PT_Guia_Slash', [
-                    "Guia de Logic-Slash: Una barrera de datos corruptos ('C') bloquea tu camino.",
-                    "Parate frente a ella, apunta con tu direccion y presiona [J] para atacarla y destruirla."
+                    "Guia de Logic-Slash: Vitt, tu codigo base te permite emitir descargas de datos.",
+                    "Presiona [J] para proyectar una onda de bits de corto alcance en la direccion a la que apuntas."
                 ]);
                 window.Enemies.spawnDestructibleBarrier(320, 100);
 
-                // Segment 3: Hex Dodge [L] check
-                window.Enemies.spawnTutorialGuide(400, 100, 'i', 'PT_Guia_Dodge', [
+                // Arena Manager
+                window.Enemies.spawnArenaManager();
+                
+                window.flashAlert("SECTOR ARENA CORRUPTA CARGADO", "cyan");
+            } else if (levelNum === 1) {
+                // Hex-Dodge gaps
+                window.Enemies.spawnTutorialGuide(60, 100, 'i', 'PT_Guia_Dodge', [
                     "Guia de Hex-Dodge: Frente a ti hay un abismo de memoria vacia (void).",
                     "Parate al borde del abismo, apunta a la derecha y presiona [L] para esquivar/saltar."
                 ]);
 
-                // Segment 4: Block & Parry [K] check
-                window.Enemies.spawnTutorialGuide(720, 140, 'i', 'PT_Guia_Parry', [
-                    "Guia de Bloqueo/Parry: Al bajar, un drone disparara proyectiles.",
-                    "Manten [K] para bloquear y reducir dano (consume CPU), o presiona [K] en el instante justo para hacer Parry Perfecto.",
-                    "Un Parry Perfecto reflejara el proyectil y te devolvera CPU."
-                ]);
-                window.Enemies.spawnTutorialDrone(560, 200, 120, 3);
-                window.Enemies.spawnTutorialGuide(660, 200, 'i', 'PT_Guia_Combate', [
-                    "Combate: Bloquea o desvia los proyectiles del drone de pruebas para avanzar hacia la izquierda."
-                ]);
+                // Exit portal to Level 1
+                window.Enemies.spawnTutorialPortal(700, 100);
 
-                // Segment 5: Stealth/Cifrado [U] check
-                window.Enemies.spawnTutorialGuide(480, 200, 'i', 'PT_Guia_Cifrado', [
-                    "Guia de Cifrado: Delante hay una camara de seguridad que escanea el area.",
-                    "Si te detecta, disparara rafagas letales de bytes.",
-                    "Presiona [U] para activar el Cifrado. Te volveras invisible, pero drenara tu CPU por segundo.",
-                    "Cruza el rango de escaneo mientras estas cifrado."
-                ]);
-                window.Enemies.spawnSecurityCamera(240, 200, 1); // Pointing right
-
-                // Segment 6: Bitflip [I] check
-                window.Enemies.spawnTutorialGuide(80, 240, 'i', 'PT_Guia_Bitflip', [
-                    "Guia de Bitflip: Una barrera laser de seguridad bloquea el camino.",
-                    "Presiona [I] para entrar en modo apuntado. Mueve la mira con [W][A][S][D].",
-                    "Apunta al emisor de laser y presiona [I] o [J] para hackearlo e invertir sus bits."
-                ]);
-                window.Enemies.spawnLaserGate(300, 300);
-
-                // Segment 7: Overflow [O] check
-                window.Enemies.spawnTutorialGuide(400, 300, 'i', 'PT_Guia_Overflow', [
-                    "Guia de Overflow: Un enjambre de malware bloquea el camino.",
-                    "Son inmunes a ataques normales debido a su numero.",
-                    "Presiona [O] para activar un Desbordamiento (Overflow). Consumira toda tu CPU para liberar una gran explosion radial."
-                ]);
-                window.Enemies.spawnMinorCorruption(520, 300);
-                window.Enemies.spawnMinorCorruption(540, 300);
-                window.Enemies.spawnMinorCorruption(560, 300);
-
-                // Segment 8: Cache Prefetch [P] check
-                window.Enemies.spawnTutorialGuide(680, 360, 'i', 'PT_Guia_Prefetch', [
-                    "Guia de Cache Prefetch: Este abismo es de 4 celdas. Esquivar con [L] fallara.",
-                    "Apunta a la izquierda y presiona [P] para usar Prefetch de Cache (salto de 6 celdas).",
-                    "Te moveras instantaneamente al otro lado sin riesgo."
-                ]);
-
-                // Segment 9: Exit
-                window.Enemies.spawnTutorialGuide(260, 400, 'H', 'PT_Guia_Fin', [
-                    "Fin del Entrenamiento: ¡Felicidades Vitt, estas listo!",
-                    "Entra al portal giratorio para iniciar la transferencia al Sector SWAP principal."
-                ]);
-                window.Enemies.spawnTutorialPortal(160, 400);
-            } else if (levelNum === 1) {
-                // Original SWAP Space Entities
+                window.flashAlert("SECTOR PARQUE DE ESQUIVA CARGADO", "cyan");
+            } else if (levelNum === 2) {
+                // Original SWAP Space Entities, except Golem is weakened
                 window.Enemies.spawnOracle(180, 100);
                 window.Enemies.spawnBit0(100, 140);
                 window.Enemies.spawnByte0xAA(440, 220);
-                window.Enemies.spawnSpindleGolem(650, 290);
+                window.Enemies.spawnWeakenedGolem(650, 290);
                 window.Enemies.spawnDaemon(320, 140);
                 window.Enemies.spawnLeak(480, 380);
                 window.Enemies.spawnNullPointer(240, 280);
 
-                window.flashAlert("SECTOR SWAP CARGADO", "cyan");
+                window.flashAlert("SECTOR SWAP CARGADO (DIFICULTAD MEDIA)", "cyan");
+            } else if (levelNum === 3) {
+                // RAM Bank A Entities with full Spindle Golem
+                window.Enemies.spawnOracle(180, 100);
+                window.Enemies.spawnDaemon(320, 140);
+                window.Enemies.spawnDaemon(480, 220);
+                window.Enemies.spawnLeak(240, 380);
+                window.Enemies.spawnLeak(560, 380);
+                window.Enemies.spawnNullPointer(240, 280);
+                window.Enemies.spawnNullPointer(440, 180);
+                window.Enemies.spawnSpindleGolem(650, 290);
+
+                window.flashAlert("SECTOR BANCO RAM A CARGADO", "cyan");
             }
         };
 
@@ -992,11 +995,6 @@
         }
 
         window.graphicsProfile = 'high';
-
-        // ── CINEMATIC → START SCREEN ──────────────────────────────────────
-        CineIntro.start(document.getElementById('cineCanvas'), () => {
-            startScreen.classList.remove('hidden');
-        });
 
         replayCineBtn.addEventListener('click', () => {
             startScreen.classList.add('hidden');
@@ -1030,6 +1028,27 @@
             if (window.GameAudio?.playLevelUp) window.GameAudio.playLevelUp();
             victoryScreen.classList.remove('hidden');
         };
+
+        // ── CINEMATIC → START SCREEN ──────────────────────────────────────
+        if (window.GameAudio && typeof window.GameAudio.init === 'function') {
+            window.GameAudio.init();
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('test')) {
+            const el = document.getElementById('cinematicScreen');
+            if (el) el.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            startBtn.click(); // Trigger click synchronously
+        } else if (urlParams.has('showStart')) {
+            const el = document.getElementById('cinematicScreen');
+            if (el) el.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        } else {
+            CineIntro.start(document.getElementById('cineCanvas'), () => {
+                startScreen.classList.remove('hidden');
+            });
+        }
     });
     </script>
 </body>

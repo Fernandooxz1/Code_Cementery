@@ -255,7 +255,11 @@
             }
             
             if (enemy.type === 'boss') {
-                if (typeof window.triggerVictory === 'function') {
+                if (window.currentLevel === 2) {
+                    if (window.loadLevel) {
+                        window.loadLevel(3);
+                    }
+                } else if (typeof window.triggerVictory === 'function') {
                     window.triggerVictory();
                 }
             }
@@ -439,7 +443,8 @@
                 }
             }
 
-            if (window.GameEngine && window.GameEngine.keys && window.GameEngine.keys['E']) {
+            const isAdvancePressed = window.GameEngine && window.GameEngine.keys && (window.GameEngine.keys['E'] || window.GameEngine.keys['ENTER']);
+            if (isAdvancePressed) {
                 if (!dialogueAdvanceKeyPressed) {
                     dialogueAdvanceKeyPressed = true;
                     if (currentDialogue.charsVisible < rawLine.length) {
@@ -466,6 +471,8 @@
                 window.GameEngine.keys['L'] = false;
                 window.GameEngine.keys['Q'] = false;
                 window.GameEngine.keys['R'] = false;
+                window.GameEngine.keys['E'] = false;
+                window.GameEngine.keys['ENTER'] = false;
             }
             return; // stop input processing
         }
@@ -481,6 +488,7 @@
                 window.GameEngine.keys['Q'] = false;
                 window.GameEngine.keys['R'] = false;
                 window.GameEngine.keys['E'] = false;
+                window.GameEngine.keys['ENTER'] = false;
             }
             return;
         }
@@ -911,6 +919,88 @@
                 }
                 break;
         }
+    }
+
+    // Corrupted Bitt update and draw
+    function updateCorruptedBitt(dt) {
+        if (this.stunTimer > 0) {
+            this.stunTimer -= 1;
+            this.state = 'stunned';
+            return;
+        }
+        
+        if (this.hitCooldown > 0) this.hitCooldown -= 1;
+        
+        const target = window.Vitt;
+        if (!target) return;
+        
+        const dx = target.x - this.x;
+        const dy = target.y - this.y;
+        const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+
+        if (dist < 18) {
+            if (this.hitCooldown <= 0) {
+                damagePlayer(5, true, this);
+                this.hitCooldown = 45;
+                this.x -= (dx / dist) * 15;
+                this.y -= (dy / dist) * 15;
+            }
+        }
+        
+        if (this.twitchTimer === undefined) this.twitchTimer = 0;
+        if (this.twitchDir === undefined) this.twitchDir = { x: 0, y: 0 };
+
+        if (this.twitchTimer > 0) {
+            this.twitchTimer -= 1;
+            this.x += this.twitchDir.x * this.speed * 1.5;
+            this.y += this.twitchDir.y * this.speed * 1.5;
+        } else {
+            if (Math.random() < 0.03) {
+                this.twitchTimer = Math.floor(10 + Math.random() * 15);
+                const angle = Math.random() * Math.PI * 2;
+                this.twitchDir = { x: Math.cos(angle), y: Math.sin(angle) };
+            } else if (Math.random() < 0.02) {
+                this.twitchTimer = Math.floor(15 + Math.random() * 20);
+                this.twitchDir = { x: 0, y: 0 };
+            } else {
+                if (dist > 10) {
+                    this.x += (dx / dist) * this.speed;
+                    this.y += (dy / dist) * this.speed;
+                }
+            }
+        }
+
+        this.x = Math.max(0, Math.min(800 - this.width, this.x));
+        this.y = Math.max(60, Math.min(540 - this.height, this.y));
+    }
+
+    function drawCorruptedBitt(ctx) {
+        ctx.save();
+        ctx.font = "bold 24px 'Courier Prime', monospace";
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        const time = Date.now();
+        const overheatFlash = Math.sin(time / 100) > 0;
+        let color = overheatFlash ? '#ff3300' : '#00ff66';
+        if (this.flashTimer > 0) {
+            color = '#ffffff';
+        }
+        
+        ctx.fillStyle = color;
+        
+        const glowAmt = 8 + Math.abs(Math.sin(time / 100)) * 10;
+        ctx.shadowBlur = glowAmt;
+        ctx.shadowColor = '#ff0000';
+        
+        let jx = 0, jy = 0;
+        if (this.twitchTimer && this.twitchTimer > 0 && this.twitchDir && (this.twitchDir.x !== 0 || this.twitchDir.y !== 0)) {
+            jx = (Math.random() - 0.5) * 4;
+            jy = (Math.random() - 0.5) * 4;
+        }
+        
+        ctx.fillText('&', this.x + 10 + jx, this.y + 10 + jy);
+        ctx.restore();
     }
 
     // 2. Memory Leak (~)
@@ -1355,8 +1445,8 @@
         const target = window.Vitt;
         if (!target) return;
         
-        // Dialogue interaction trigger
-        if (!currentDialogue && window.GameEngine && window.GameEngine.keys && window.GameEngine.keys['E']) {
+        const isInteractPressed = window.GameEngine && window.GameEngine.keys && (window.GameEngine.keys['E'] || window.GameEngine.keys['ENTER']);
+        if (!currentDialogue && isInteractPressed) {
             if (!this.interactKeyPressed) {
                 this.interactKeyPressed = true;
                 
@@ -1378,7 +1468,7 @@
                     };
                 }
             }
-        } else if (!window.GameEngine || !window.GameEngine.keys || !window.GameEngine.keys['E']) {
+        } else if (!isInteractPressed) {
             this.interactKeyPressed = false;
         }
     }
@@ -1513,7 +1603,8 @@
         const target = window.Vitt;
         if (!target) return;
         
-        if (!currentDialogue && !oscilloscopeActive && window.GameEngine && window.GameEngine.keys && window.GameEngine.keys['E']) {
+        const isInteractPressed = window.GameEngine && window.GameEngine.keys && (window.GameEngine.keys['E'] || window.GameEngine.keys['ENTER']);
+        if (!currentDialogue && !oscilloscopeActive && isInteractPressed) {
             if (!this.interactKeyPressed) {
                 this.interactKeyPressed = true;
                 
@@ -1576,7 +1667,7 @@
                     }
                 }
             }
-        } else if (!window.GameEngine || !window.GameEngine.keys || !window.GameEngine.keys['E']) {
+        } else if (!isInteractPressed) {
             this.interactKeyPressed = false;
         }
     }
@@ -2394,7 +2485,8 @@
         // Nombre del jefe encima
         ctx.font = "bold 9px 'Courier Prime', monospace";
         ctx.fillStyle = bodyColor;
-        ctx.fillText('[ GOLEM DEL CABEZAL — SPINDLE v2.3 ]', cx, cy - 60);
+        let bossName = this.symbol === 'SPINDLE_MINI' ? '[ GOLEM DEBILITADO — MINI SPINDLE ]' : '[ GOLEM DEL CABEZAL — SPINDLE v2.3 ]';
+        ctx.fillText(bossName, cx, cy - 60);
 
         // ─── BARRA DE INTEGRIDAD ──────────────────────────────────────────────
         const barW = 200;
@@ -2887,7 +2979,8 @@
                     if (this.dialogueCooldown > 0) {
                         this.dialogueCooldown -= dt * 60;
                     }
-                    if (!currentDialogue && window.GameEngine && window.GameEngine.keys && window.GameEngine.keys['E']) {
+                    const isInteractPressed = window.GameEngine && window.GameEngine.keys && window.GameEngine.keys['E'];
+                    if (!currentDialogue && isInteractPressed) {
                         if (!this.interactKeyPressed && this.dialogueCooldown <= 0) {
                             this.interactKeyPressed = true;
                             const dx = target.x - this.x;
@@ -2905,7 +2998,7 @@
                                 };
                             }
                         }
-                    } else if (!window.GameEngine || !window.GameEngine.keys || !window.GameEngine.keys['E']) {
+                    } else if (!isInteractPressed) {
                         this.interactKeyPressed = false;
                     }
                 },
@@ -2913,20 +3006,61 @@
                     ctx.save();
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillStyle = '#00f2fe';
-                    ctx.font = "bold 20px 'Courier Prime', monospace";
-                    ctx.shadowBlur = 8;
-                    ctx.shadowColor = '#00f2fe';
-                    ctx.fillText(this.symbol, this.x + 10, this.y + 10);
                     
+                    const time = Date.now();
+                    const pulse = Math.abs(Math.sin(time / 150));
+                    const blinkState = Math.sin(time / 100) > 0;
+                    
+                    let color = '#00f2fe';
+                    if (this.symbol === 'i') {
+                        // Alternate rapidly between cyan and yellow/white
+                        color = blinkState ? '#00f2fe' : '#ffff33';
+                    } else {
+                        color = blinkState ? '#00f2fe' : '#ffffff';
+                    }
+                    
+                    // 1. Draw a pulsing outer circle around the symbol to attract attention
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 1.5;
+                    ctx.shadowBlur = 10 + pulse * 6;
+                    ctx.shadowColor = color;
+                    ctx.beginPath();
+                    const circleRadius = 12 + pulse * 4;
+                    ctx.arc(this.x + 10, this.y + 10, circleRadius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    // 2. Draw a small bouncing warning triangle/arrow above the guide
+                    const bounceY = this.y - 12 - pulse * 5;
+                    ctx.fillStyle = '#ff0055'; // Vibrant neon red
+                    ctx.shadowColor = '#ff0055';
+                    ctx.shadowBlur = 6;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 6, bounceY);
+                    ctx.lineTo(this.x + 14, bounceY);
+                    ctx.lineTo(this.x + 10, bounceY + 6);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // 3. Draw the guide symbol itself
+                    ctx.fillStyle = color;
+                    ctx.font = "bold 20px 'Courier Prime', monospace";
+                    ctx.shadowBlur = 12 + pulse * 4;
+                    ctx.shadowColor = color;
+                    ctx.fillText(this.symbol, this.x + 10, this.y + 10);
+                    ctx.shadowBlur = 0; // Reset shadow
+                    
+                    // 4. Draw prompt if player is nearby
                     const target = window.Vitt;
                     if (target) {
                         const dx = target.x - this.x;
                         const dy = target.y - this.y;
-                        if (dx*dx + dy*dy < 40*40 && !currentDialogue) {
-                            ctx.font = "8px 'Courier Prime', monospace";
+                        if (dx*dx + dy*dy < 45*45 && !currentDialogue) {
+                            ctx.save();
+                            ctx.textAlign = 'left';
+                            ctx.font = "bold 9px 'Courier Prime', monospace";
                             ctx.fillStyle = '#00ff66';
-                            ctx.fillText("[E] LEER", this.x + 10, this.y - 12);
+                            ctx.fillText("[E] para conectar...", this.x - 30, this.y - 22);
+                            ctx.restore();
                         }
                     }
                     ctx.restore();
@@ -3269,7 +3403,7 @@
                     const target = window.Vitt;
                     if (target && target.gridX === this.gridX && target.gridY === this.gridY) {
                         if (window.loadLevel) {
-                            window.loadLevel(1);
+                            window.loadLevel(window.currentLevel + 1);
                         }
                     }
                 },
@@ -3292,6 +3426,178 @@
             };
             window.activeEnemies.push(portal);
             return portal;
+        },
+
+        spawnCorruptedBitt(x, y) {
+            const bitt = {
+                x, y,
+                width: 20,
+                height: 20,
+                integrity: 40,
+                maxIntegrity: 40,
+                speed: 2.2,
+                type: 'corrupted_bitt',
+                symbol: '&',
+                flashTimer: 0,
+                hitCooldown: 0,
+                twitchTimer: 0,
+                twitchDir: { x: 0, y: 0 },
+                hitBySlashes: [],
+                update(dt) {
+                    updateCorruptedBitt.call(this, dt);
+                },
+                draw(ctx) {
+                    drawCorruptedBitt.call(this, ctx);
+                }
+            };
+            window.activeEnemies.push(bitt);
+            return bitt;
+        },
+
+        spawnArenaManager() {
+            const manager = {
+                x: -100,
+                y: -100,
+                width: 0,
+                height: 0,
+                integrity: 999999,
+                maxIntegrity: 999999,
+                type: 'arena_manager',
+                isNPC: true,
+                phase: 0,
+                spawnedEnemies: [],
+                gateEntity: null,
+                update(dt) {
+                    const target = window.Vitt;
+                    if (!target) return;
+                    
+                    if (this.phase === 0) {
+                        if (target.gridX >= 18) {
+                            this.phase = 1;
+                            this.gateEntity = {
+                                x: 340,
+                                y: 100,
+                                gridX: 17,
+                                gridY: 5,
+                                width: 20,
+                                height: 20,
+                                isSolid: true,
+                                integrity: 999999,
+                                maxIntegrity: 999999,
+                                type: 'arena_gate',
+                                symbol: 'X',
+                                isNPC: true,
+                                update(dt) {},
+                                draw(ctx) {
+                                    ctx.save();
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillStyle = '#ff0055';
+                                    ctx.font = "bold 20px 'Courier Prime', monospace";
+                                    ctx.shadowBlur = 8;
+                                    ctx.shadowColor = '#ff0055';
+                                    ctx.fillText('X', this.x + 10, this.y + 10);
+                                    ctx.restore();
+                                }
+                            };
+                            window.activeEnemies.push(this.gateEntity);
+                        }
+                    }
+                    
+                    if (this.phase === 1) {
+                        const b1 = window.Enemies.spawnCorruptedBitt(500, 200);
+                        this.spawnedEnemies = [b1];
+                        if (window.flashAlert) {
+                            window.flashAlert("ALERTA: PROCESO CORRUPTO DETECTADO [1vs1]", "red");
+                        }
+                        this.phase = 11;
+                    }
+                    
+                    if (this.phase === 11) {
+                        if (this.spawnedEnemies.every(e => e.integrity <= 0)) {
+                            this.phase = 2;
+                        }
+                    }
+                    
+                    if (this.phase === 2) {
+                        const b1 = window.Enemies.spawnCorruptedBitt(500, 160);
+                        const b2 = window.Enemies.spawnCorruptedBitt(500, 240);
+                        this.spawnedEnemies = [b1, b2];
+                        if (window.flashAlert) {
+                            window.flashAlert("MALWARE DISPERSÁNDOSE [2vs1]", "red");
+                        }
+                        this.phase = 22;
+                    }
+                    
+                    if (this.phase === 22) {
+                        if (this.spawnedEnemies.every(e => e.integrity <= 0)) {
+                            this.phase = 3;
+                        }
+                    }
+                    
+                    if (this.phase === 3) {
+                        const b1 = window.Enemies.spawnCorruptedBitt(500, 140);
+                        const b2 = window.Enemies.spawnCorruptedBitt(500, 180);
+                        const b3 = window.Enemies.spawnCorruptedBitt(500, 220);
+                        const b4 = window.Enemies.spawnCorruptedBitt(500, 260);
+                        this.spawnedEnemies = [b1, b2, b3, b4];
+                        if (window.flashAlert) {
+                            window.flashAlert("DESBORDAMIENTO DE HILOS CORRUPTOS [4vs1]", "red");
+                        }
+                        this.phase = 33;
+                    }
+                    
+                    if (this.phase === 33) {
+                        if (this.spawnedEnemies.every(e => e.integrity <= 0)) {
+                            this.phase = 4;
+                            if (this.gateEntity) {
+                                this.gateEntity.integrity = 0;
+                            }
+                            window.Enemies.spawnTutorialPortal(700, 100);
+                            window.Enemies.spawnTutorialGuide(500, 200, 'i', 'SISTEMA DE DIAGNOSTICO', [
+                                "¡Arena limpia! Descubrimos que el sobrecalentamiento de estos procesos",
+                                "fue causado por un malware externo que alteraba sus hilos de ejecucion.",
+                                "Esto causaba que realizaran bucles infinitos y consumieran el 100% de la CPU.",
+                                "Cruza el portal al final de la arena para avanzar al sector de esquiva."
+                            ]);
+                        }
+                    }
+                },
+                draw(ctx) {}
+            };
+            window.activeEnemies.push(manager);
+            return manager;
+        },
+
+        spawnWeakenedGolem(x, y) {
+            const golem = {
+                x, y,
+                width: 60,
+                height: 40,
+                integrity: 300,
+                maxIntegrity: 300,
+                type: 'boss',
+                symbol: 'SPINDLE_MINI',
+                state: 'dormant',
+                stateTimer: 120,
+                stunTimer: 0,
+                flashTimer: 0,
+                hitCooldown: 0,
+                yOffset: 0,
+                sweptLanes: [],
+                warningMsg: "",
+                dischargeLane: 0,
+                shockwaveRadius: 0,
+                hitBySlashes: [],
+                update(dt) {
+                    updateSpindleGolem.call(this, dt);
+                },
+                draw(ctx) {
+                    drawSpindleGolem.call(this, ctx);
+                }
+            };
+            window.activeEnemies.push(golem);
+            return golem;
         }
     };
 })();

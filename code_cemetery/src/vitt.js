@@ -63,21 +63,37 @@ window.Vitt = {
     lastKeys: {},
 
     init() {
-        this.integrity = 100;
-        this.maxIntegrity = 100;
-        this.cpuCycles = 100;
-        this.maxCpuCycles = 100;
+        this.unlockedAbilities = {
+            'J': false,
+            'L': false,
+            'K': false,
+            'U': false,
+            'I': false,
+            'O': false,
+            'P': false,
+            'R': false
+        };
+        if (window.currentLevel === 0) {
+            this.unlockedAbilities['J'] = true;
+            this.gridX = 3;
+            this.gridY = 5;
+        } else if (window.currentLevel === 1) {
+            this.unlockedAbilities['J'] = true;
+            this.unlockedAbilities['L'] = true;
+            this.gridX = 3;
+            this.gridY = 5;
+        } else if (window.currentLevel === 2) {
+            this.unlockedAbilities['J'] = true;
+            this.unlockedAbilities['L'] = true;
+            this.gridX = 5;
+            this.gridY = 5;
+        } else {
+            this.unlockedAbilities['J'] = true;
+            this.unlockedAbilities['L'] = true;
+            this.gridX = 5;
+            this.gridY = 5;
+        }
         
-        this.isEncrypted = false;
-        this.isThrottled = false;
-        this.isBlocking = false;
-        this.isDodging = false;
-        this.bitflipMode = false;
-        
-        this.facingDir = { x: 1, y: 0 };
-        
-        this.gridX = (window.currentLevel === 1) ? 5 : 3;
-        this.gridY = (window.currentLevel === 1) ? 5 : 5;
         this.x = this.gridX * this.TILE_SIZE;
         this.y = this.gridY * this.TILE_SIZE;
         this.targetX = this.x;
@@ -577,26 +593,59 @@ window.Vitt = {
         ctx.fillText("SUBRUTINAS:", 20, 577);
         
         // U: Cifrado
-        ctx.fillStyle = this.isThrottled ? "#666" : (this.isEncrypted ? "#00f2fe" : (this.cpuCycles >= 15 ? "#00ff66" : "#aa0000"));
-        ctx.fillText("[U] CIFRADO", 140, 577);
+        if (!this.unlockedAbilities || !this.unlockedAbilities['U']) {
+            ctx.fillStyle = "#555555";
+            ctx.fillText("[ ] CIFRADO", 140, 577);
+        } else {
+            ctx.fillStyle = this.isThrottled ? "#666" : (this.isEncrypted ? "#00f2fe" : (this.cpuCycles >= 15 ? "#00ff66" : "#aa0000"));
+            ctx.fillText("[U] CIFRADO", 140, 577);
+        }
         
         // I: Bitflip
-        ctx.fillStyle = this.isThrottled ? "#666" : (this.bitflipMode ? "#00f2fe" : (this.cpuCycles >= 20 ? "#00ff66" : "#aa0000"));
-        ctx.fillText("[I] BITFLIP", 280, 577);
+        if (!this.unlockedAbilities || !this.unlockedAbilities['I']) {
+            ctx.fillStyle = "#555555";
+            ctx.fillText("[ ] BITFLIP", 280, 577);
+        } else {
+            ctx.fillStyle = this.isThrottled ? "#666" : (this.bitflipMode ? "#00f2fe" : (this.cpuCycles >= 20 ? "#00ff66" : "#aa0000"));
+            ctx.fillText("[I] BITFLIP", 280, 577);
+        }
         
         // O: Overflow
-        ctx.fillStyle = this.isThrottled ? "#666" : (this.cpuCycles >= 25 ? "#00ff66" : "#aa0000");
-        ctx.fillText("[O] OVERFLOW", 420, 577);
+        if (!this.unlockedAbilities || !this.unlockedAbilities['O']) {
+            ctx.fillStyle = "#555555";
+            ctx.fillText("[ ] OVERFLOW", 420, 577);
+        } else {
+            ctx.fillStyle = this.isThrottled ? "#666" : (this.cpuCycles >= 25 ? "#00ff66" : "#aa0000");
+            ctx.fillText("[O] OVERFLOW", 420, 577);
+        }
         
         // P: Cache Prefetch
-        ctx.fillStyle = this.isThrottled ? "#666" : (this.cpuCycles >= 30 ? "#00ff66" : "#aa0000");
-        ctx.fillText("[P] PREFETCH", 560, 577);
+        if (!this.unlockedAbilities || !this.unlockedAbilities['P']) {
+            ctx.fillStyle = "#555555";
+            ctx.fillText("[ ] PREFETCH", 560, 577);
+        } else {
+            ctx.fillStyle = this.isThrottled ? "#666" : (this.cpuCycles >= 30 ? "#00ff66" : "#aa0000");
+            ctx.fillText("[P] PREFETCH", 560, 577);
+        }
+
+        // K: Parry
+        if (!this.unlockedAbilities || !this.unlockedAbilities['K']) {
+            ctx.fillStyle = "#555555";
+            ctx.fillText("[ ] PARRY", 700, 577);
+        } else {
+            ctx.fillStyle = this.isThrottled ? "#666" : (this.isBlocking ? "#00f2fe" : "#00ff66");
+            ctx.fillText("[K] PARRY", 700, 577);
+        }
         
         ctx.restore();
     },
     
     // Core Actions & Abilities
     slash() {
+        if (!this.unlockedAbilities || !this.unlockedAbilities['J']) {
+            this.showTextEffect("* SUBRUTINA BLOQUEADA *", "#ff0055");
+            return;
+        }
         if (this.isThrottled || this.slashTimer > 0) return;
         if (this.cpuCycles < 15) {
             this.showTextEffect("* SIN ANCHO DE BANDA *", "#ff0055");
@@ -685,6 +734,10 @@ window.Vitt = {
     },
     
     dodge() {
+        if (!this.unlockedAbilities || !this.unlockedAbilities['L']) {
+            this.showTextEffect("* SUBRUTINA BLOQUEADA *", "#ff0055");
+            return;
+        }
         if (this.isThrottled || this.isDodging) return;
         if (this.cpuCycles < 25) {
             this.showTextEffect("* SIN ANCHO DE BANDA *", "#ff0055");
@@ -738,6 +791,10 @@ window.Vitt = {
     },
     
     parry() {
+        if (!this.unlockedAbilities || !this.unlockedAbilities['K']) {
+            this.showTextEffect("* SUBRUTINA BLOQUEADA *", "#ff0055");
+            return;
+        }
         if (this.isThrottled) return;
         this.parryTimer = 12 / 60; // 12 frames parry window
         this.isBlocking = true;
@@ -747,6 +804,10 @@ window.Vitt = {
     
     // Subroutines
     useCifrado() {
+        if (!this.unlockedAbilities || !this.unlockedAbilities['U']) {
+            this.showTextEffect("* SUBRUTINA BLOQUEADA *", "#ff0055");
+            return;
+        }
         if (this.isThrottled) return;
         if (this.isEncrypted) {
             this.isEncrypted = false;
@@ -764,6 +825,10 @@ window.Vitt = {
     },
     
     useBitflip() {
+        if (!this.unlockedAbilities || !this.unlockedAbilities['I']) {
+            this.showTextEffect("* SUBRUTINA BLOQUEADA *", "#ff0055");
+            return;
+        }
         if (this.isThrottled) return;
         if (this.bitflipMode) {
             if (this.cpuCycles < 20) {
@@ -858,6 +923,10 @@ window.Vitt = {
     },
     
     useOverflow() {
+        if (!this.unlockedAbilities || !this.unlockedAbilities['O']) {
+            this.showTextEffect("* SUBRUTINA BLOQUEADA *", "#ff0055");
+            return;
+        }
         if (this.isThrottled) return;
         if (this.cpuCycles < 25) {
             this.showTextEffect("* SIN ANCHO DE BANDA *", "#ff0055");
@@ -936,6 +1005,10 @@ window.Vitt = {
     },
     
     useCachePrefetch() {
+        if (!this.unlockedAbilities || !this.unlockedAbilities['P']) {
+            this.showTextEffect("* SUBRUTINA BLOQUEADA *", "#ff0055");
+            return;
+        }
         if (this.isThrottled) return;
         if (this.cpuCycles < 30) {
             this.showTextEffect("* SIN ANCHO DE BANDA *", "#ff0055");
@@ -1042,6 +1115,10 @@ window.Vitt = {
     },
     
     refreshCycle() {
+        if (!this.unlockedAbilities || !this.unlockedAbilities['R']) {
+            this.showTextEffect("* SUBRUTINA BLOQUEADA *", "#ff0055");
+            return;
+        }
         if (this.isThrottled) return;
         if (this.cpuCycles < 25) {
             this.showTextEffect("* SIN ANCHO DE BANDA *", "#ff0055");
